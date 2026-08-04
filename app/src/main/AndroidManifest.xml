@@ -9,7 +9,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="小克"
+        android:label="\u5c0f\u514b"
+        android:icon="@drawable/ic_pet"
         android:theme="@style/AppTheme">
 
         <activity
