@@ -10,7 +10,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipamp/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
@@ -29,6 +29,6 @@
             android:name=".OverlayService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
-
+            
     </application>
 </manifest>
