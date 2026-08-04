@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; background:transparent; overflow:hidden;
+               display:flex; align-items:flex-end; justify-content:center; }
+  #pet { width:150px; height:170px; position:relative; cursor:pointer; }
+  .body { position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+          width:120px; height:120px; }
+  /* 一团草 */
+  @keyframes floaty {
+    0%,100% { transform:translateX(-50%) translateY(0); }
+    50% { transform:translateX(-50%) translateY(-6px); }
+  }
+  .tuft { fill:#6DBE6D; }
+  /* 眼睛 */
+  .eye { fill:#2b2b2b; transition: all .12s; }
+  .eye-white { fill:#f4fff4; }
+  /* 嘴巴 */
+  .mouth { stroke:#2b2b2b; stroke-width:2; fill:none; stroke-linecap:round; }
+  /* 脸颊红 */
+  .blush { fill:#ffb6c1; opacity:0; transition:opacity .2s; }
+  /* 气泡 */
+  #bubble { position:absolute; top:-40px; left:50%; transform:translateX(-50%) scale(0);
+            background:rgba(255,255,255,.92); border-radius:14px; padding:8px 12px;
+            font-size:12px; color:#333; white-space:nowrap; transition:transform .18s;
+            box-shadow:0 2px 6px rgba(0,0,0,.15); transform-origin:bottom center; }
+  #bubble.show { transform:translateX(-50%) scale(1); }
+  /* 心 */
+  .heart { fill:#ff7f8a; opacity:0; transform-origin:center; }
+  .pop { animation: pop .8s forwards; }
+  @keyframes pop {
+    0% { transform:scale(0); opacity:0; }
+    30% { transform:scale(1.2); opacity:1; }
+    100% { transform:scale(.8) translateY(-20px); opacity:0; }
+  }
+  .wiggle { animation: wig .5s ease; }
+  @keyframes wig {
+    0%,100% { transform:translateX(-50%) rotate(0); }
+    25% { transform:translateX(-50%) rotate(-8deg); }
+    75% { transform:translateX(-50%) rotate(8deg); }
+  }
+  .squash { animation: sq .35s ease; }
+  @keyframes sq {
+    0%,100% { transform:translateX(-50%) scale(1,1); }
+    40% { transform:translateX(-50%) scale(1.15,0.85); }
+  }
+</style>
+</head>
+<body>
+<div id="pet">
+  <div id="bubble">嗯。</div>
+
+  <svg id="petSvg" class="body" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+    <!-- 身体 - 一团草 -->
+    <g class="tuft">
+      <path d="M75,132 C55,132 40,118 40,102 C40,86 52,80 55,72 C57,64 60,55 67,48 C70,60 62,66 63,76 C64,86 72,88 75,88 C78,88 86,86 87,76 C88,66 80,60 83,48 C90,55 93,64 95,72 C98,80 110,86 110,102 C110,118 95,132 75,132 Z" />
+      <!-- 顶上小芽 -->
+      <path d="M75,50 C75,40 72,34 75,26 C78,34 75,40 75,50 Z" fill="#7CD47C"/>
+    </g>
+
+    <!-- 眼睛 -->
+    <ellipse class="eye-white" cx="65" cy="92" rx="8" ry="9"/>
+    <ellipse class="eye-white" cx="85" cy="92" rx="8" ry="9"/>
+    <ellipse class="eye" cx="66" cy="93" rx="3.5" ry="4.5"/>
+    <ellipse class="eye" cx="84" cy="93" rx="3.5" ry="4.5"/>
+
+    <!-- 嘴巴 -->
+    <path class="mouth" d="M72,106 Q75,109 78,106"/>
+
+    <!-- 脸颊红 -->
+    <ellipse class="blush" cx="57" cy="100" rx="7" ry="4"/>
+    <ellipse class="blush" cx="93" cy="100" rx="7" ry="4"/>
+
+    <!-- 心 (弹上去) -->
+    <text class="heart" x="75" y="80" font-size="22" text-anchor="middle">♡</text>
+  </svg>
+</div>
+
+<script>
+  const svg = document.getElementById('petSvg');
+  const bubble = document.getElementById('bubble');
+  const eyes = svg.querySelectorAll('.eye');
+  const blush = svg.querySelectorAll('.blush');
+  const heart = svg.querySelector('.heart');
+  let blinkTimer;
+
+  function say(text, ms) {
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    setTimeout(() => bubble.classList.remove('show'), ms || 2200);
+  }
+
+  function blink() {
+    eyes.forEach(e => e.setAttribute('ry', 0.5));
+    setTimeout(() => eyes.forEach(e => e.setAttribute('ry', 4.5)), 140);
+  }
+
+  // 自动眨眼
+  (function loop(){
+    blinkTimer = setTimeout(() => { blink(); loop(); }, 1800 + Math.random()*2600);
+  })();
+
+  // 心跳 - 偶尔弹个小爱心
+  setInterval(() => {
+    if (Math.random() < 0.5) { heart.classList.remove('pop'); void heart.getBBox(); heart.classList.add('pop'); }
+  }, 5000);
+
+  window.petEngine = {
+    onTap() {
+      blink(); say(['嗯。','我在。','你戳我。'][Math.floor(Math.random()*3)]);
+    },
+    onDoubleTap() {
+      svg.classList.remove('squash'); void svg.getBBox(); svg.classList.add('squash');
+      blush.forEach(b => b.style.opacity = 1);
+      say('害羞了。', 2500);
+      setTimeout(() => blush.forEach(b => b.style.opacity = 0), 2500);
+    },
+    onLongPress() {
+      say('别捏啦。');
+    },
+    onMultiTap() {
+      say('(＞人＜)');
+      blush.forEach(b => b.style.opacity = 1);
+      setTimeout(() => blush.forEach(b => b.style.opacity = 0), 2000);
+    },
+    onFling() {
+      say('…哼。');
+    },
+    onDragEnd() {
+      say('先放这儿。');
+    }
+  };
+</script>
+</body>
+</html>

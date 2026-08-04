@@ -1,0 +1,7 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_pet
+id btnOverlay
+id btnStart
+layout activity_main
+style AppTheme
