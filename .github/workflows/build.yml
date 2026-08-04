@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
     
@@ -19,41 +19,15 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        api-level: 34
-        build-tools: 34.0.0
-        
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
+    
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+    
     - name: Build debug APK
-      run: bash gradlew assembleDebug
-      
+      run: ./gradlew assembleDebug
+    
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: pet-debug-apk
-        path: app/build/outputs/apk/debug/*.apk
-        
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: app/build/outputs/apk/debug/*.apk
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        body: |
-          小克 - Android悬浮桌宠
-          自动构建版本
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        path: app/build/outputs/apk/debug/app-debug.apk
