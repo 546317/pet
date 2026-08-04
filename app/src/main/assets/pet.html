@@ -9,44 +9,30 @@
                display:flex; align-items:flex-end; justify-content:center; }
   #pet { width:150px; height:170px; position:relative; cursor:pointer; }
   .body { position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-          width:120px; height:120px; }
-  /* 一团草 */
-  @keyframes floaty {
-    0%,100% { transform:translateX(-50%) translateY(0); }
-    50% { transform:translateX(-50%) translateY(-6px); }
-  }
-  .tuft { fill:#6DBE6D; }
-  /* 眼睛 */
-  .eye { fill:#2b2b2b; transition: all .12s; }
-  .eye-white { fill:#f4fff4; }
-  /* 嘴巴 */
-  .mouth { stroke:#2b2b2b; stroke-width:2; fill:none; stroke-linecap:round; }
-  /* 脸颊红 */
-  .blush { fill:#ffb6c1; opacity:0; transition:opacity .2s; }
+          width:120px; height:120px; image-rendering: pixelated; }
   /* 气泡 */
   #bubble { position:absolute; top:-40px; left:50%; transform:translateX(-50%) scale(0);
-            background:rgba(255,255,255,.92); border-radius:14px; padding:8px 12px;
-            font-size:12px; color:#333; white-space:nowrap; transition:transform .18s;
-            box-shadow:0 2px 6px rgba(0,0,0,.15); transform-origin:bottom center; }
+            background:rgba(255,255,255,.95); border-radius:12px; padding:8px 12px;
+            font-size:13px; color:#5a4a3a; white-space:nowrap; transition:transform .15s;
+            box-shadow:0 2px 8px rgba(0,0,0,.15); font-family: sans-serif; }
   #bubble.show { transform:translateX(-50%) scale(1); }
-  /* 心 */
-  .heart { fill:#ff7f8a; opacity:0; transform-origin:center; }
-  .pop { animation: pop .8s forwards; }
-  @keyframes pop {
-    0% { transform:scale(0); opacity:0; }
-    30% { transform:scale(1.2); opacity:1; }
-    100% { transform:scale(.8) translateY(-20px); opacity:0; }
-  }
-  .wiggle { animation: wig .5s ease; }
-  @keyframes wig {
-    0%,100% { transform:translateX(-50%) rotate(0); }
-    25% { transform:translateX(-50%) rotate(-8deg); }
-    75% { transform:translateX(-50%) rotate(8deg); }
+  /* 动画 */
+  .bounce { animation: bounce .6s ease; }
+  @keyframes bounce {
+    0%,100% { transform:translateX(-50%) translateY(0); }
+    40% { transform:translateX(-50%) translateY(-12px); }
+    60% { transform:translateX(-50%) translateY(-6px); }
   }
   .squash { animation: sq .35s ease; }
   @keyframes sq {
     0%,100% { transform:translateX(-50%) scale(1,1); }
-    40% { transform:translateX(-50%) scale(1.15,0.85); }
+    40% { transform:translateX(-50%) scale(1.12,0.88); }
+  }
+  .wiggle { animation: wig .4s ease; }
+  @keyframes wig {
+    0%,100% { transform:translateX(-50%) rotate(0); }
+    25% { transform:translateX(-50%) rotate(-6deg); }
+    75% { transform:translateX(-50%) rotate(6deg); }
   }
 </style>
 </head>
@@ -54,29 +40,53 @@
 <div id="pet">
   <div id="bubble">嗯。</div>
 
-  <svg id="petSvg" class="body" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-    <!-- 身体 - 一团草 -->
-    <g class="tuft">
-      <path d="M75,132 C55,132 40,118 40,102 C40,86 52,80 55,72 C57,64 60,55 67,48 C70,60 62,66 63,76 C64,86 72,88 75,88 C78,88 86,86 87,76 C88,66 80,60 83,48 C90,55 93,64 95,72 C98,80 110,86 110,102 C110,118 95,132 75,132 Z" />
-      <!-- 顶上小芽 -->
-      <path d="M75,50 C75,40 72,34 75,26 C78,34 75,40 75,50 Z" fill="#7CD47C"/>
-    </g>
-
+  <svg id="petSvg" class="body" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <!-- 小克 - 像素风棕色小生物 -->
+    
+    <!-- 身体主体 -->
+    <rect x="16" y="28" width="32" height="20" fill="#C17A5C"/>
+    <rect x="14" y="30" width="2" height="16" fill="#C17A5C"/>
+    <rect x="48" y="30" width="2" height="16" fill="#C17A5C"/>
+    <rect x="12" y="32" width="2" height="12" fill="#C17A5C"/>
+    <rect x="50" y="32" width="2" height="12" fill="#C17A5C"/>
+    
+    <!-- 身体高光 -->
+    <rect x="18" y="30" width="28" height="14" fill="#D48A6C"/>
+    
+    <!-- 四条腿 -->
+    <rect x="18" y="48" width="4" height="8" fill="#C17A5C"/>
+    <rect x="26" y="48" width="4" height="8" fill="#C17A5C"/>
+    <rect x="34" y="48" width="4" height="8" fill="#C17A5C"/>
+    <rect x="42" y="48" width="4" height="8" fill="#C17A5C"/>
+    
     <!-- 眼睛 -->
-    <ellipse class="eye-white" cx="65" cy="92" rx="8" ry="9"/>
-    <ellipse class="eye-white" cx="85" cy="92" rx="8" ry="9"/>
-    <ellipse class="eye" cx="66" cy="93" rx="3.5" ry="4.5"/>
-    <ellipse class="eye" cx="84" cy="93" rx="3.5" ry="4.5"/>
-
+    <rect class="eye" x="22" y="36" width="6" height="4" fill="#2b2b2b"/>
+    <rect class="eye" x="36" y="36" width="6" height="4" fill="#2b2b2b"/>
+    
     <!-- 嘴巴 -->
-    <path class="mouth" d="M72,106 Q75,109 78,106"/>
-
-    <!-- 脸颊红 -->
-    <ellipse class="blush" cx="57" cy="100" rx="7" ry="4"/>
-    <ellipse class="blush" cx="93" cy="100" rx="7" ry="4"/>
-
-    <!-- 心 (弹上去) -->
-    <text class="heart" x="75" y="80" font-size="22" text-anchor="middle">♡</text>
+    <rect x="30" y="44" width="4" height="2" fill="#8B5A3C"/>
+    
+    <!-- 头顶小黄鸟 -->
+    <g id="bird" transform="translate(28, 14)">
+      <!-- 鸟身体 -->
+      <rect x="0" y="4" width="8" height="6" fill="#F4D03F"/>
+      <rect x="-2" y="6" width="2" height="4" fill="#F4D03F"/>
+      <rect x="8" y="6" width="2" height="4" fill="#F4D03F"/>
+      <!-- 鸟头 -->
+      <rect x="1" y="0" width="6" height="4" fill="#F4D03F"/>
+      <!-- 鸟嘴 -->
+      <rect x="7" y="1" width="2" height="2" fill="#E67E22"/>
+      <!-- 鸟眼 -->
+      <rect x="4" y="1" width="1" height="1" fill="#2b2b2b"/>
+      <!-- 鸟翅膀 -->
+      <rect x="2" y="5" width="2" height="2" fill="#F39C12"/>
+    </g>
+    
+    <!-- 闪烁星星 -->
+    <g transform="translate(52, 8)">
+      <rect x="0" y="2" width="1" height="3" fill="#F4D03F"/>
+      <rect x="-1" y="3" width="3" height="1" fill="#F4D03F"/>
+    </g>
   </svg>
 </div>
 
@@ -84,8 +94,7 @@
   const svg = document.getElementById('petSvg');
   const bubble = document.getElementById('bubble');
   const eyes = svg.querySelectorAll('.eye');
-  const blush = svg.querySelectorAll('.blush');
-  const heart = svg.querySelector('.heart');
+  const bird = document.getElementById('bird');
   let blinkTimer;
 
   function say(text, ms) {
@@ -95,37 +104,40 @@
   }
 
   function blink() {
-    eyes.forEach(e => e.setAttribute('ry', 0.5));
-    setTimeout(() => eyes.forEach(e => e.setAttribute('ry', 4.5)), 140);
+    eyes.forEach(e => e.setAttribute('height', '1'));
+    setTimeout(() => {
+      eyes.forEach(e => e.setAttribute('height', '4'));
+    }, 120);
   }
 
   // 自动眨眼
   (function loop(){
-    blinkTimer = setTimeout(() => { blink(); loop(); }, 1800 + Math.random()*2600);
+    blinkTimer = setTimeout(() => { blink(); loop(); }, 2000 + Math.random()*3000);
   })();
 
-  // 心跳 - 偶尔弹个小爱心
+  // 鸟偶尔跳一下
   setInterval(() => {
-    if (Math.random() < 0.5) { heart.classList.remove('pop'); void heart.getBBox(); heart.classList.add('pop'); }
-  }, 5000);
+    if (Math.random() < 0.3) {
+      bird.style.transform = 'translate(28px, 10px)';
+      setTimeout(() => bird.style.transform = 'translate(28px, 14px)', 200);
+    }
+  }, 4000);
 
   window.petEngine = {
     onTap() {
-      blink(); say(['嗯。','我在。','你戳我。'][Math.floor(Math.random()*3)]);
+      blink(); 
+      say(['嗯。','我在。','你戳我。'][Math.floor(Math.random()*3)]);
+      svg.classList.remove('bounce'); void svg.getBBox(); svg.classList.add('bounce');
     },
     onDoubleTap() {
       svg.classList.remove('squash'); void svg.getBBox(); svg.classList.add('squash');
-      blush.forEach(b => b.style.opacity = 1);
       say('害羞了。', 2500);
-      setTimeout(() => blush.forEach(b => b.style.opacity = 0), 2500);
     },
     onLongPress() {
       say('别捏啦。');
     },
     onMultiTap() {
       say('(＞人＜)');
-      blush.forEach(b => b.style.opacity = 1);
-      setTimeout(() => blush.forEach(b => b.style.opacity = 0), 2000);
     },
     onFling() {
       say('…哼。');
