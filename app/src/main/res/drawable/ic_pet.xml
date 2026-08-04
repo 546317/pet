@@ -3,16 +3,20 @@
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
-    <path
-        android:fillColor="#7CD47C"
-        android:pathData="M24,4 C14,4 4,12 4,24 C4,30 7,36 12,40 C14,42 18,44 24,44 C30,44 34,42 36,40 C41,36 44,30 44,24 C44,12 34,4 24,4 Z" />
-    <path
-        android:fillColor="#5BB85B"
-        android:pathData="M14,20 C14,14 20,10 24,10 C28,10 34,14 34,20 C34,24 30,26 24,26 C18,26 14,24 14,20 Z" />
-    <path
-        android:fillColor="#000000"
-        android:pathData="M18,18 m-2,0 a2,2 0 1,1 4,0 a2,2 0 1,1 -4,0" />
-    <path
-        android:fillColor="#000000"
-        android:pathData="M30,18 m-2,0 a2,2 0 1,1 4,0 a2,2 0 1,1 -4,0" />
+    <!-- 身体 -->
+    <path android:fillColor="#8B5A3C" android:pathData="M16,28 h16 v12 h-16 z" />
+    <path android:fillColor="#C17A5C" android:pathData="M18,30 h12 v8 h-12 z" />
+    <!-- 耳朵 -->
+    <path android:fillColor="#8B5A3C" android:pathData="M14,22 l4,6 h-4 z" />
+    <path android:fillColor="#8B5A3C" android:pathData="M34,22 l-4,6 h4 z" />
+    <!-- 眼睛 -->
+    <path android:fillColor="#000000" android:pathData="M19,32 h3 v3 h-3 z" />
+    <path android:fillColor="#000000" android:pathData="M28,32 h3 v3 h-3 z" />
+    <!-- 腮红 -->
+    <path android:fillColor="#FFB6C1" android:pathData="M17,36 h2 v2 h-2 z" />
+    <path android:fillColor="#FFB6C1" android:pathData="M31,36 h2 v2 h-2 z" />
+    <!-- 小黄鸟 -->
+    <path android:fillColor="#F4D03F" android:pathData="M22,14 h4 v4 h-4 z" />
+    <path android:fillColor="#E5C02F" android:pathData="M26,16 h2 v2 h-2 z" />
+    <path android:fillColor="#000000" android:pathData="M24,15 h1 v1 h-1 z" />
 </vector>
