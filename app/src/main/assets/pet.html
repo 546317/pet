@@ -1,151 +1,108 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { width:100%; height:100%; background:transparent; overflow:hidden;
-               display:flex; align-items:flex-end; justify-content:center; }
-  #pet { width:150px; height:170px; position:relative; cursor:pointer; }
-  .body { position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-          width:120px; height:120px; image-rendering: pixelated; }
-  /* 气泡 */
-  #bubble { position:absolute; top:-40px; left:50%; transform:translateX(-50%) scale(0);
-            background:rgba(255,255,255,.95); border-radius:12px; padding:8px 12px;
-            font-size:13px; color:#5a4a3a; white-space:nowrap; transition:transform .15s;
-            box-shadow:0 2px 8px rgba(0,0,0,.15); font-family: sans-serif; }
-  #bubble.show { transform:translateX(-50%) scale(1); }
-  /* 动画 */
-  .bounce { animation: bounce .6s ease; }
-  @keyframes bounce {
-    0%,100% { transform:translateX(-50%) translateY(0); }
-    40% { transform:translateX(-50%) translateY(-12px); }
-    60% { transform:translateX(-50%) translateY(-6px); }
-  }
-  .squash { animation: sq .35s ease; }
-  @keyframes sq {
-    0%,100% { transform:translateX(-50%) scale(1,1); }
-    40% { transform:translateX(-50%) scale(1.12,0.88); }
-  }
-  .wiggle { animation: wig .4s ease; }
-  @keyframes wig {
-    0%,100% { transform:translateX(-50%) rotate(0); }
-    25% { transform:translateX(-50%) rotate(-6deg); }
-    75% { transform:translateX(-50%) rotate(6deg); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #pet {
+      width: 120px;
+      height: 120px;
+      cursor: pointer;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+  </style>
 </head>
 <body>
-<div id="pet">
-  <div id="bubble">嗯。</div>
-
-  <svg id="petSvg" class="body" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-    <!-- 小克 - 像素风棕色小生物 -->
+  <svg id="pet" viewBox="0 0 32 32" shape-rendering="crispEdges">
+    <!-- 阴影 -->
+    <ellipse cx="16" cy="28" rx="10" ry="2" fill="#000000" opacity="0.2"/>
     
-    <!-- 身体主体 -->
-    <rect x="16" y="28" width="32" height="20" fill="#C17A5C"/>
-    <rect x="14" y="30" width="2" height="16" fill="#C17A5C"/>
-    <rect x="48" y="30" width="2" height="16" fill="#C17A5C"/>
-    <rect x="12" y="32" width="2" height="12" fill="#C17A5C"/>
-    <rect x="50" y="32" width="2" height="12" fill="#C17A5C"/>
+    <!-- 棕色身体 -->
+    <rect x="8" y="12" width="16" height="14" fill="#C17A5C"/>
+    <rect x="6" y="14" width="2" height="10" fill="#C17A5C"/>
+    <rect x="24" y="14" width="2" height="10" fill="#C17A5C"/>
+    <rect x="10" y="10" width="12" height="2" fill="#C17A5C"/>
     
-    <!-- 身体高光 -->
-    <rect x="18" y="30" width="28" height="14" fill="#D48A6C"/>
-    
-    <!-- 四条腿 -->
-    <rect x="18" y="48" width="4" height="8" fill="#C17A5C"/>
-    <rect x="26" y="48" width="4" height="8" fill="#C17A5C"/>
-    <rect x="34" y="48" width="4" height="8" fill="#C17A5C"/>
-    <rect x="42" y="48" width="4" height="8" fill="#C17A5C"/>
+    <!-- 腿 -->
+    <rect x="8" y="26" width="3" height="3" fill="#8B5A3C"/>
+    <rect x="21" y="26" width="3" height="3" fill="#8B5A3C"/>
+    <rect x="11" y="26" width="2" height="2" fill="#8B5A3C"/>
+    <rect x="19" y="26" width="2" height="2" fill="#8B5A3C"/>
     
     <!-- 眼睛 -->
-    <rect class="eye" x="22" y="36" width="6" height="4" fill="#2b2b2b"/>
-    <rect class="eye" x="36" y="36" width="6" height="4" fill="#2b2b2b"/>
+    <rect id="eyeL" x="11" y="16" width="3" height="3" fill="#000000"/>
+    <rect id="eyeR" x="18" y="16" width="3" height="3" fill="#000000"/>
     
-    <!-- 嘴巴 -->
-    <rect x="30" y="44" width="4" height="2" fill="#8B5A3C"/>
+    <!-- 鼻子 -->
+    <rect x="15" y="20" width="2" height="1" fill="#8B5A3C"/>
     
-    <!-- 头顶小黄鸟 -->
-    <g id="bird" transform="translate(28, 14)">
-      <!-- 鸟身体 -->
-      <rect x="0" y="4" width="8" height="6" fill="#F4D03F"/>
-      <rect x="-2" y="6" width="2" height="4" fill="#F4D03F"/>
-      <rect x="8" y="6" width="2" height="4" fill="#F4D03F"/>
-      <!-- 鸟头 -->
-      <rect x="1" y="0" width="6" height="4" fill="#F4D03F"/>
-      <!-- 鸟嘴 -->
-      <rect x="7" y="1" width="2" height="2" fill="#E67E22"/>
-      <!-- 鸟眼 -->
-      <rect x="4" y="1" width="1" height="1" fill="#2b2b2b"/>
-      <!-- 鸟翅膀 -->
-      <rect x="2" y="5" width="2" height="2" fill="#F39C12"/>
-    </g>
-    
-    <!-- 闪烁星星 -->
-    <g transform="translate(52, 8)">
-      <rect x="0" y="2" width="1" height="3" fill="#F4D03F"/>
-      <rect x="-1" y="3" width="3" height="1" fill="#F4D03F"/>
+    <!-- 小黄鸟 -->
+    <g id="bird">
+      <rect x="20" y="6" width="8" height="6" fill="#F4D03F" rx="1"/>
+      <rect x="28" y="8" width="3" height="2" fill="#F39C12"/>
+      <rect x="22" y="8" width="1" height="1" fill="#000000"/>
+      <rect x="25" y="8" width="1" height="1" fill="#000000"/>
+      <rect x="26" y="6" width="2" height="2" fill="#F7DC6F"/>
     </g>
   </svg>
-</div>
 
-<script>
-  const svg = document.getElementById('petSvg');
-  const bubble = document.getElementById('bubble');
-  const eyes = svg.querySelectorAll('.eye');
-  const bird = document.getElementById('bird');
-  let blinkTimer;
-
-  function say(text, ms) {
-    bubble.textContent = text;
-    bubble.classList.add('show');
-    setTimeout(() => bubble.classList.remove('show'), ms || 2200);
-  }
-
-  function blink() {
-    eyes.forEach(e => e.setAttribute('height', '1'));
-    setTimeout(() => {
-      eyes.forEach(e => e.setAttribute('height', '4'));
-    }, 120);
-  }
-
-  // 自动眨眼
-  (function loop(){
-    blinkTimer = setTimeout(() => { blink(); loop(); }, 2000 + Math.random()*3000);
-  })();
-
-  // 鸟偶尔跳一下
-  setInterval(() => {
-    if (Math.random() < 0.3) {
-      bird.style.transform = 'translate(28px, 10px)';
-      setTimeout(() => bird.style.transform = 'translate(28px, 14px)', 200);
+  <script>
+    const eyeL = document.getElementById('eyeL');
+    const eyeR = document.getElementById('eyeR');
+    const bird = document.getElementById('bird');
+    
+    // 眨眼
+    function blink() {
+      eyeL.setAttribute('height', '1');
+      eyeR.setAttribute('height', '1');
+      setTimeout(() => {
+        eyeL.setAttribute('height', '3');
+        eyeR.setAttribute('height', '3');
+      }, 150);
+      setTimeout(blink, 2000 + Math.random() * 3000);
     }
-  }, 4000);
-
-  window.petEngine = {
-    onTap() {
-      blink(); 
-      say(['嗯。','我在。','你戳我。'][Math.floor(Math.random()*3)]);
-      svg.classList.remove('bounce'); void svg.getBBox(); svg.classList.add('bounce');
-    },
-    onDoubleTap() {
-      svg.classList.remove('squash'); void svg.getBBox(); svg.classList.add('squash');
-      say('害羞了。', 2500);
-    },
-    onLongPress() {
-      say('别捏啦。');
-    },
-    onMultiTap() {
-      say('(＞人＜)');
-    },
-    onFling() {
-      say('…哼。');
-    },
-    onDragEnd() {
-      say('先放这儿。');
+    setTimeout(blink, 1000);
+    
+    // 小鸟偶尔跳
+    function birdJump() {
+      bird.setAttribute('transform', 'translate(0, -2)');
+      setTimeout(() => bird.setAttribute('transform', 'translate(0, 0)'), 200);
+      setTimeout(birdJump, 3000 + Math.random() * 4000);
     }
-  };
-</script>
+    setTimeout(birdJump, 2000);
+    
+    // 被戳反馈
+    document.getElementById('pet').addEventListener('click', () => {
+      document.body.style.transform = 'scale(0.95)';
+      setTimeout(() => document.body.style.transform = 'scale(1)', 100);
+    });
+    
+    // 双击害羞
+    let lastClick = 0;
+    document.getElementById('pet').addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastClick < 300) {
+        // 害羞，眼睛变成弯线
+        eyeL.setAttribute('width', '1');
+        eyeR.setAttribute('width', '1');
+        setTimeout(() => {
+          eyeL.setAttribute('width', '3');
+          eyeR.setAttribute('width', '3');
+        }, 500);
+      }
+      lastClick = now;
+    });
+  </script>
 </body>
 </html>
