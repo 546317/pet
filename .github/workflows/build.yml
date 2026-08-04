@@ -20,14 +20,34 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     
-    - name: Make gradlew executable
-      run: chmod +x gradlew
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
     
     - name: Build debug APK
-      run: ./gradlew assembleDebug
+      run: bash gradlew assembleDebug
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: pet-debug-apk
         path: app/build/outputs/apk/debug/app-debug.apk
+    
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: 小克桌宠 自动构建版本
+        files: app/build/outputs/apk/debug/app-debug.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
