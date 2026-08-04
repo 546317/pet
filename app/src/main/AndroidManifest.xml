@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="@TestString/app_name"
+        android:label="小克"
         android:theme="@style/AppTheme">
 
         <activity
