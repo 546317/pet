@@ -1,108 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background: transparent;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    #pet {
-      width: 120px;
-      height: 120px;
-      cursor: pointer;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>小克</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  
+  #pet {
+    width: 150px;
+    height: 150px;
+    position: relative;
+    cursor: pointer;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  
+  /* 语音气泡 */
+  #bubble {
+    position: absolute;
+    top: -45px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: rgba(255,255,255,.95);
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #5a4a3a;
+    white-space: nowrap;
+    transition: transform .15s;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    pointer-events: none;
+  }
+  
+  #bubble.show {
+    transform: translateX(-50%) scale(1);
+  }
+
+  /* 点击动画 */
+  .bounce {
+    animation: bounce .5s ease;
+  }
+  
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    40% { transform: translateY(-15px); }
+    60% { transform: translateY(-8px); }
+  }
+  
+  /* 害羞 */
+  .shy {
+    animation: shy .6s ease;
+  }
+  
+  @keyframes shy {
+    0%,100% { transform: scale(1); }
+    30% { transform: scale(1.08, 0.92); }
+    60% { transform: scale(0.95, 1.05); }
+  }
+</style>
 </head>
 <body>
-  <svg id="pet" viewBox="0 0 32 32" shape-rendering="crispEdges">
-    <!-- 阴影 -->
-    <ellipse cx="16" cy="28" rx="10" ry="2" fill="#000000" opacity="0.2"/>
+<div id="pet">
+  <div id="bubble">嗯。</div>
+  
+  <svg id="petSvg" width="150" height="150" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <defs><style>.crab-body{transform-origin:15px 18px;animation:breathe 3s ease-in-out infinite}.crab-shadow{transform-origin:15px 25px;animation:shadow-scale 3s ease-in-out infinite}.claw-l{transform-origin:3px 12px;animation:claw-wave 4s ease-in-out infinite}.claw-r{transform-origin:27px 12px;animation:claw-wave 4s ease-in-out infinite reverse}.eye-l,.eye-r{animation:blink 4s infinite}@keyframes breathe{0%,100%{transform:translateY(0) scaleY(1}50%{transform:translateY(-0.5px) scaleY(0.98)}@keyframes shadow-scale{0%,100%{transform:scaleX(1);opacity:0.5}50%{transform:scaleX(0.95);opacity:0.45}@keyframes claw-wave{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-8deg)}@keyframes blink{0%,45%,55%,100%{opacity:1}50%{opacity:0.2}</style></defs>
     
-    <!-- 棕色身体 -->
-    <rect x="8" y="12" width="16" height="14" fill="#C17A5C"/>
-    <rect x="6" y="14" width="2" height="10" fill="#C17A5C"/>
-    <rect x="24" y="14" width="2" height="10" fill="#C17A5C"/>
-    <rect x="10" y="10" width="12" height="2" fill="#C17A5C"/>
+    <ellipse class="crab-shadow" cx="15" cy="25" rx="8" ry="1.5" fill="#000" opacity="0.4"/>
     
-    <!-- 腿 -->
-    <rect x="8" y="26" width="3" height="3" fill="#8B5A3C"/>
-    <rect x="21" y="26" width="3" height="3" fill="#8B5A3C"/>
-    <rect x="11" y="26" width="2" height="2" fill="#8B5A3C"/>
-    <rect x="19" y="26" width="2" height="2" fill="#8B5A3C"/>
-    
-    <!-- 眼睛 -->
-    <rect id="eyeL" x="11" y="16" width="3" height="3" fill="#000000"/>
-    <rect id="eyeR" x="18" y="16" width="3" height="3" fill="#000000"/>
-    
-    <!-- 鼻子 -->
-    <rect x="15" y="20" width="2" height="1" fill="#8B5A3C"/>
-    
-    <!-- 小黄鸟 -->
-    <g id="bird">
-      <rect x="20" y="6" width="8" height="6" fill="#F4D03F" rx="1"/>
-      <rect x="28" y="8" width="3" height="2" fill="#F39C12"/>
-      <rect x="22" y="8" width="1" height="1" fill="#000000"/>
-      <rect x="25" y="8" width="1" height="1" fill="#000000"/>
-      <rect x="26" y="6" width="2" height="2" fill="#F7DC6F"/>
+    <g class="crab-body">
+      <g class="claw-l"><rect x="0" y="10" width="3" height="4" fill="#DE886D"/><rect x="1" y="8" width="2" height="2" fill="#DE886D"/><rect x="2" y="6" width="3" height="3" fill="#DE886D"/><rect x="3" y="5" width="2" height="2" fill="#DE886D"/></g>
+      <g class="claw-r"><rect x="27" y="10" width="3" height="4" fill="#DE886D"/><rect x="27" y="8" width="2" height="2" fill="#DE886D"/><rect x="25" y="6" width="3" height="3" fill="#DE886D"/><rect x="25" y="5" width="2" height="2" fill="#DE886D"/></g>
+      <rect x="3" y="20" width="1" height="2" fill="#DE886D"/><rect x="5" y="20" width="1" height="2" fill="#DE886D"/><rect x="7" y="20" width="1" height="2" fill="#DE886D"/>
+      <rect x="22" y="20" width="1" height="2" fill="#DE886D"/><rect x="24" y="20" width="1" height="2" fill="#DE886D"/><rect x="26" y="20" width="1" height="2" fill="#DE886D"/>
+      <rect x="5" y="12" width="20" height="9" fill="#DE886D"/><rect x="4" y="14" width="1" height="5" fill="#DE886D"/><rect x="25" y="14" width="1" height="5" fill="#DE886D"/>
+      <g><rect class="eye-l" x="9" y="9" width="2" height="2" fill="#000"/><rect class="eye-r" x="19" y="9" width="2" height="2" fill="#000"/></g>
+      <rect x="14" y="16" width="2" height="1" fill="#8B5A3C"/>
     </g>
   </svg>
-
-  <script>
-    const eyeL = document.getElementById('eyeL');
-    const eyeR = document.getElementById('eyeR');
-    const bird = document.getElementById('bird');
-    
-    // 眨眼
-    function blink() {
-      eyeL.setAttribute('height', '1');
-      eyeR.setAttribute('height', '1');
-      setTimeout(() => {
-        eyeL.setAttribute('height', '3');
-        eyeR.setAttribute('height', '3');
-      }, 150);
-      setTimeout(blink, 2000 + Math.random() * 3000);
-    }
-    setTimeout(blink, 1000);
-    
-    // 小鸟偶尔跳
-    function birdJump() {
-      bird.setAttribute('transform', 'translate(0, -2)');
-      setTimeout(() => bird.setAttribute('transform', 'translate(0, 0)'), 200);
-      setTimeout(birdJump, 3000 + Math.random() * 4000);
-    }
-    setTimeout(birdJump, 2000);
-    
-    // 被戳反馈
-    document.getElementById('pet').addEventListener('click', () => {
-      document.body.style.transform = 'scale(0.95)';
-      setTimeout(() => document.body.style.transform = 'scale(1)', 100);
-    });
-    
-    // 双击害羞
-    let lastClick = 0;
-    document.getElementById('pet').addEventListener('click', () => {
-      const now = Date.now();
-      if (now - lastClick < 300) {
-        // 害羞，眼睛变成弯线
-        eyeL.setAttribute('width', '1');
-        eyeR.setAttribute('width', '1');
-        setTimeout(() => {
-          eyeL.setAttribute('width', '3');
-          eyeR.setAttribute('width', '3');
-        }, 500);
-      }
-      lastClick = now;
-    });
-  </script>
+</div>
+<script>
+  const pet=document.getElementById('pet'),bubble=document.getElementById('bubble');
+  let lastClickTime=0,clickCount=0;
+  const messages=['嗯。','阿运。','你戶我。','干嘛。','别闹。'], shyMessages=['害羞了。','(＞人＜)','神盅秠爱。'];
+  function say(t,d){bubble.textContent=t;bubble.classList.add('show');setTimeout(()=>bubble.classList.remove('show'),d||2200)}
+  pet.addEventListener('click',()=>{const n=Date.now(),td=n-lastClickTime;if(td<300){pet.classList.remove('shy');void pet.offsetWidth;pet.classList.add('shy');say(shyMessages[Math.floor(Math.random()*shyMessages.length)],2500)}else{clickCount=1;pet.classList.remove('bounce');void pet.offsetWidth;pet.classList.add('bounce');say(messages[Math.floor(Math.random()*messages.length)])}lastClickTime=n});
+  let lpt;pet.addEventListener('mousedown',()=>{lpt=setTimeout(()=>say(空间祥。',2000),800)});pet.addEventListener('mouseup',()=>clearTimeout(lpt));
+  pet.addEventListener('touchstart',()=>{lpt=setTimeout(()=>say(空ߖ�奧。',2000),800)});pet.addEventListener('touchend',()=>clearTimeout(lpt));
+  window.petEngine={onTap:()=>pet.click(),say:(t)=>say(t)};
+</script>
 </body>
 </html>
