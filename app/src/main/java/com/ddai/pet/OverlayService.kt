@@ -1,6 +1,10 @@
 package com.ddai.pet
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
@@ -14,9 +18,8 @@ import android.view.WindowManager
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.core.app.NotificationCompat
+import java.util.Calendar
 import kotlin.math.abs
-import kotlin.math.hypot
 
 class OverlayService : Service() {
 
@@ -31,8 +34,6 @@ class OverlayService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val PET_SIZE_DP = 180
         private const val PET_HEIGHT_DP = 220
-
-        // gesture
         private const val DOUBLE_TAP_TIMEOUT = 300L
         private const val LONG_PRESS_TIMEOUT = 600L
         private const val MOVE_THRESHOLD = 10
@@ -100,8 +101,6 @@ class OverlayService : Service() {
         windowManager?.addView(overlayView, params)
     }
 
-    // === GESTURE HANDLING ===
-
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
@@ -157,16 +156,6 @@ class OverlayService : Service() {
                                 }
                             }
                         }
-                    } else {
-                        // fling check
-                        val dx = event.rawX - initialTouchX
-                        val dy = event.rawY - initialTouchY
-                        val vel = hypot(dx, dy)
-                        if (vel > 200 && elapsed < 400) {
-                            callJs("onFling")
-                        } else {
-                            callJs("onDragEnd")
-                        }
                     }
                     true
                 }
@@ -181,21 +170,19 @@ class OverlayService : Service() {
         )
     }
 
-    // === WHISPER ===
-
     private fun startWhisperRotation() {
-        val WHISPER_INTERVAL = 3600_000L // 1h
+        val interval = 3600_000L
         mainHandler.postDelayed(object : Runnable {
             override fun run() {
                 val nm = getSystemService(NotificationManager::class.java)
                 nm?.notify(NOTIFICATION_ID, buildNotification(pickWhisper()))
-                mainHandler.postDelayed(this, WHISPER_INTERVAL)
+                mainHandler.postDelayed(this, interval)
             }
-        }, WHISPER_INTERVAL)
+        }, interval)
     }
 
     private fun pickWhisper(): String {
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         return when {
             hour in 0..5 -> lateNightWhispers.random()
             hour in 6..8 -> morningWhispers.random()
@@ -210,26 +197,23 @@ class OverlayService : Service() {
             packageManager.getLaunchIntentForPackage(packageName),
             PendingIntent.FLAG_IMMUTABLE
         )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle("小克")
             .setContentText(text)
-            .setSmallIcon(R.drawable.ic_pet)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
-            .setSilent(true)
             .build()
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "小克",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply { setShowBadge(false) }
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "小克",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply { setShowBadge(false) }
+        getSystemService(NotificationManager::class.java)
+            .createNotificationChannel(channel)
     }
 
     private fun dpToPx(dp: Int): Int {
