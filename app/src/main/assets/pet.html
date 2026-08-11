@@ -53,12 +53,36 @@ body {
     max-width: 170px;
     transition: transform 0.06s;
     will-change: transform;
+    cursor: grab;
 }
-#pet:active { transform: scale(0.98); }
+#pet:active { cursor: grabbing; }
 #pet img {
     width: 100%;
     height: auto;
     display: block;
+    pointer-events: none;
+}
+/* 甩飞动画：弹出去 */
+#pet.fly-left { animation: flyL 0.7s cubic-bezier(.2,.4,.3,1); }
+#pet.fly-right { animation: flyR 0.7s cubic-bezier(.2,.4,.3,1); }
+#pet.fly-up { animation: flyU 0.7s cubic-bezier(.2,.4,.3,1); }
+#pet.fly-down { animation: flyD 0.7s cubic-bezier(.2,.4,.3,1); }
+@keyframes flyL { 0% { transform: translate(0,0) rotate(0); opacity:1; } 100% { transform: translate(-220%,40%) rotate(-40deg); opacity:0; } }
+@keyframes flyR { 0% { transform: translate(0,0) rotate(0); opacity:1; } 100% { transform: translate(220%,40%) rotate(40deg); opacity:0; } }
+@keyframes flyU { 0% { transform: translate(0,0) rotate(0); opacity:1; } 100% { transform: translate(0,-220%) rotate(20deg); opacity:0; } }
+@keyframes flyD { 0% { transform: translate(0,0) rotate(0); opacity:1; } 100% { transform: translate(0,220%) rotate(-20deg); opacity:0; } }
+/* 爬回来：从底部慢慢走回来 */
+#pet.crawl-back {
+    transition: transform 0.9s cubic-bezier(.3,.6,.2,1);
+}
+#pet.crawl-back { transform: translate(0,0) rotate(0); opacity:1; }
+/* 生气摇晃 */
+#pet.angry { animation: angryShake 0.5s; }
+@keyframes angryShake {
+    0%,100% { transform: translate(0,0); }
+    25% { transform: translate(-4px,0); }
+    50% { transform: translate(4px,0); }
+    75% { transform: translate(-3px,0); }
 }
 #controls {
     display: none;
@@ -154,7 +178,7 @@ EMOTES.forEach(function(s) {
     c.setAttribute("data-state", s);
     c.title = s;
     c.textContent = emojiMap[s] || "•";
-    c.onclick = function() { setState(s); showBubble(randomWords(s)); };
+    c.onclick = function(e) { e.stopPropagation(); setState(s); showBubble(randomWords(s)); };
     controls.appendChild(c);
 });
 
@@ -163,6 +187,9 @@ function randomWords(state) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/* ================= 互动系统 ================= */
+
+// 暴露给原生手势
 window.petEngine = {
     onTap: function() { onCrabTap(); },
     onDoubleTap: function() { showBubble("嗯。你叫我呀。"); },
@@ -178,7 +205,7 @@ window.petEngine = {
     setState: function(s) { if (STATES[s]) setState(s); }
 };
 
-// 戳几下就换形象：累计快速点击，满 3 次换下一个
+// 戳几下就换形象
 var tapCounter = 0;
 var tapTimer = null;
 function onCrabTap() {
@@ -194,7 +221,7 @@ function onCrabTap() {
     }
 }
 
-// 自动轮换：每隔一段时间自动换一个随机形象
+// 自动轮换
 var EMOTE_KEYS = Object.keys(STATES);
 function randomState() {
     return EMOTE_KEYS[Math.floor(Math.random() * EMOTE_KEYS.length)];
@@ -204,10 +231,99 @@ function nextState() {
     var next = EMOTE_KEYS[(cur + 1) % EMOTE_KEYS.length];
     setState(next);
 }
-// 每 20 秒自动换一个随机形象
 setInterval(function() {
     setState(randomState());
 }, 20000);
+
+/* ---- 甩飞 + 爬回来 ---- */
+var dragStartX = 0, dragStartY = 0, dragMoved = false, dragStartTime = 0;
+var lastVelX = 0, lastVelY = 0, lastMoveX = 0, lastMoveY = 0, lastMoveTime = 0;
+
+// WebView 触摸：检测甩动方向
+petEl.addEventListener("touchstart", function(e) {
+    var t = e.touches[0];
+    dragStartX = dragStartY = 0;
+    dragStartX = t.clientX;
+    dragStartY = t.clientY;
+    dragMoved = false;
+    lastMoveX = t.clientX; lastMoveY = t.clientY;
+    lastMoveTime = Date.now();
+    dragStartTime = Date.now();
+}, {passive:true});
+
+petEl.addEventListener("touchmove", function(e) {
+    var t = e.touches[0];
+    dragMoved = true;
+    lastVelX = t.clientX - lastMoveX;
+    lastVelY = t.clientY - lastMoveY;
+    lastMoveX = t.clientX; lastMoveY = t.clientY;
+    lastMoveTime = Date.now();
+}, {passive:true});
+
+petEl.addEventListener("touchend", function(e) {
+    if (!dragMoved) return;
+    // 甩动速度阈值：速度快且移动距离短 = 甩
+    var dx = lastMoveX - dragStartX, dy = lastMoveY - dragStartY;
+    var speed = Math.sqrt(lastVelX*lastVelX + lastVelY*lastVelY);
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    // 甩 = 快的速度 + 不算太长距离（甩一下短促）
+    if (speed > 25 && dist < 120) {
+        var dirX = lastVelX, dirY = lastVelY;
+        var dir = (Math.abs(dirX) >= Math.abs(dirY)) ? (dirX >= 0 ? "right" : "left") : (dirY >= 0 ? "down" : "up");
+        flyAndCrawl(dir);
+    }
+}, {passive:true});
+
+// 电脑鼠标拖动甩
+var mouseDown = false, mouseStartX = 0, mouseStartY = 0, mouseVelX = 0, mouseVelY = 0, mouseLastX = 0, mouseLastY = 0;
+petEl.addEventListener("mousedown", function(e) {
+    mouseDown = true;
+    mouseStartX = mouseLastX = e.clientX;
+    mouseStartY = mouseLastY = e.clientY;
+});
+window.addEventListener("mousemove", function(e) {
+    if (!mouseDown) return;
+    mouseVelX = e.clientX - mouseLastX;
+    mouseVelY = e.clientY - mouseLastY;
+    mouseLastX = e.clientX; mouseLastY = e.clientY;
+});
+window.addEventListener("mouseup", function(e) {
+    if (!mouseDown) return;
+    mouseDown = false;
+    var dx = e.clientX - mouseStartX, dy = e.clientY - mouseStartY;
+    var speed = Math.sqrt(mouseVelX*mouseVelX + mouseVelY*mouseVelY);
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    if (speed > 10 && dist < 150) {
+        var dir = (Math.abs(mouseVelX) >= Math.abs(mouseVelY)) ? (mouseVelX >= 0 ? "right" : "left") : (mouseVelY >= 0 ? "down" : "up");
+        flyAndCrawl(dir);
+    }
+});
+
+function flyAndCrawl(dir) {
+    // 清掉之前的动画
+    var cls = ["fly-left","fly-right","fly-up","fly-down","crawl-back","angry"];
+    cls.forEach(function(c){ petEl.classList.remove(c); });
+    // 强制重排
+    void petEl.offsetWidth;
+    petEl.classList.add(dir === "left" ? "fly-left" : dir === "right" ? "fly-right" : dir === "up" ? "fly-up" : "fly-down");
+    // 飞出去后，从远处爬回来
+    setTimeout(function() {
+        petEl.classList.remove("fly-left","fly-right","fly-up","fly-down");
+        petEl.classList.add("crawl-back");
+        var fromX = dir === "left" ? "-180%" : dir === "right" ? "180%" : 0;
+        var fromY = dir === "up" ? "-160%" : dir === "down" ? "160%" : 0;
+        petEl.style.transform = "translate(" + fromX + "," + fromY + ")";
+        // 冒泡说话
+        showBubble("咻——回来啦。");
+        // 等下回位
+        setTimeout(function() {
+            petEl.classList.remove("crawl-back");
+            petEl.style.transform = "";
+            petEl.classList.add("angry");
+            setTimeout(function(){ petEl.classList.remove("angry"); }, 500);
+        }, 400);
+    }, 650);
+}
 
 function toggleControls() {
     var c = document.body.classList;
@@ -234,8 +350,9 @@ function showBubble(text) {
     showBubble._t = setTimeout(function() { bubble.style.display = "none"; }, 2200);
 }
 
-// 点击小克本体也切换控制栏
+// 点击小克本体弹出/收起控制栏
 petEl.addEventListener("click", function(e) {
+    if (dragMoved) { dragMoved = false; return; } // 拖动过就不算点击
     e.preventDefault();
     toggleControls();
 });
