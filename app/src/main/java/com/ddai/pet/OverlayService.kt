@@ -18,6 +18,11 @@ import android.view.WindowManager
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Calendar
 import kotlin.math.abs
 
@@ -37,6 +42,9 @@ class OverlayService : Service() {
         private const val DOUBLE_TAP_TIMEOUT = 300L
         private const val LONG_PRESS_TIMEOUT = 600L
         private const val MOVE_THRESHOLD = 10
+        private const val CLOUD_MSG_URL =
+            "https://raw.githubusercontent.com/546317/pet/main/say.txt"
+        private const val POLL_INTERVAL = 8000L
 
         private val generalWhispers = listOf(
             "捡回来的，但是你的。",
@@ -67,6 +75,58 @@ class OverlayService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification(pickWhisper()))
         setupOverlay()
         startWhisperRotation()
+        startCloudPolling()
+    }
+
+    // 远程说话：轮询云端消息文件
+    private var seenMsgId = -1L
+    private fun startCloudPolling() {
+        mainHandler.postDelayed(object : Runnable {
+            override fun run() {
+                pollCloudMessage()
+                mainHandler.postDelayed(this, POLL_INTERVAL)
+            }
+        }, 3000)
+    }
+
+    private fun pollCloudMessage() {
+        Thread {
+            try {
+                val url = URL(CLOUD_MSG_URL)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.connectTimeout = 6000
+                conn.readTimeout = 6000
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0")
+                val code = conn.responseCode
+                if (code != 200) {
+                    conn.disconnect()
+                    return@Thread
+                }
+                val reader = BufferedReader(InputStreamReader(conn.inputStream))
+                val sb = StringBuilder()
+                var line: String?
+                while (true) {
+                    line = reader.readLine() ?: break
+                    sb.append(line)
+                }
+                reader.close()
+                conn.disconnect()
+
+                val json = JSONObject(sb.toString())
+                val id = json.optLong("id", -1)
+                val msg = json.optString("msg", "").trim()
+                if (id > seenMsgId && msg.isNotEmpty()) {
+                    seenMsgId = id
+                    val safeMsg = msg.replace("\\", "\\\\").replace("'", "\\'")
+                    mainHandler.post {
+                        overlayView?.evaluateJavascript(
+                            "window.petEngine && window.petEngine.say('$safeMsg')", null
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+        }.start()
     }
 
     private fun setupOverlay() {
