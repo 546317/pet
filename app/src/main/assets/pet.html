@@ -164,13 +164,50 @@ function randomWords(state) {
 }
 
 window.petEngine = {
-    onTap: function() { toggleControls(); },
+    onTap: function() { onCrabTap(); },
     onDoubleTap: function() { showBubble("嗯。你叫我呀。"); },
-    onLongPress: function() { showBubble("我一直都在。"); },
-    onMultiTap: function() { showBubble("别戳啦，痒…"); },
+    onLongPress: function() {
+        nextState();
+        showBubble("换一个。");
+    },
+    onMultiTap: function() {
+        nextState();
+        showBubble("变！");
+    },
     say: function(text) { if (text) showBubble(text); },
     setState: function(s) { if (STATES[s]) setState(s); }
 };
+
+// 戳几下就换形象：累计快速点击，满 3 次换下一个
+var tapCounter = 0;
+var tapTimer = null;
+function onCrabTap() {
+    tapCounter++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(function() { tapCounter = 0; }, 800);
+    if (tapCounter >= 3) {
+        tapCounter = 0;
+        nextState();
+        showBubble("嘿，换一个！");
+    } else {
+        showBubble(randomWords(currentState));
+    }
+}
+
+// 自动轮换：每隔一段时间自动换一个随机形象
+var EMOTE_KEYS = Object.keys(STATES);
+function randomState() {
+    return EMOTE_KEYS[Math.floor(Math.random() * EMOTE_KEYS.length)];
+}
+function nextState() {
+    var cur = EMOTE_KEYS.indexOf(currentState);
+    var next = EMOTE_KEYS[(cur + 1) % EMOTE_KEYS.length];
+    setState(next);
+}
+// 每 20 秒自动换一个随机形象
+setInterval(function() {
+    setState(randomState());
+}, 20000);
 
 function toggleControls() {
     var c = document.body.classList;
