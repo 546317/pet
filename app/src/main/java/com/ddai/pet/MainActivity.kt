@@ -18,20 +18,19 @@ import java.io.FileOutputStream
 class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        // 在 super.onCreate 之前就写日志——这样连 super 崩溃都能抓到
+        logCrash("=== onCreate ENTER ===")
+        try {
+            super.onCreate(savedInstanceState)
+            logCrash("=== super.onCreate OK ===")
+        } catch (t: Throwable) {
+            logCrash("=== CRASH in super.onCreate: ${t}\n${t.stackTrace.joinToString("\n")} ===")
+            throw t
+        }
 
         try {
-            // 崩溃日志文件，方便排查
-            val logFile = File(getExternalFilesDir(null), "crash.log")
-            logFile.parentFile?.mkdirs()
-            fun log(msg: String) {
-                try {
-                    FileOutputStream(logFile, true).use { it.write("$msg\n".toByteArray()) }
-                } catch (_: Exception) {}
-            }
-            log("=== onCreate start ===")
+            logCrash("=== build UI ===")
 
-            // 完全代码构建界面，不依赖 layout/activity_main.xml
             val root = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
@@ -87,26 +86,24 @@ class MainActivity : Activity() {
                 }
             })
 
-            log("=== setContentView ===")
             setContentView(root)
-            log("=== onCreate done ===")
+            logCrash("=== onCreate DONE ===")
 
         } catch (e: Throwable) {
-            // 捕获崩溃，写入日志
-            try {
-                val logFile = File(getExternalFilesDir(null), "crash.log")
-                logFile.parentFile?.mkdirs()
-                FileOutputStream(logFile, true).use {
-                    it.write("=== CRASH ===\n".toByteArray())
-                    it.write(e.toString().toByteArray())
-                    it.write("\n".toByteArray())
-                    e.stackTrace.forEach { st ->
-                        it.write(st.toString().toByteArray())
-                        it.write("\n".toByteArray())
-                    }
-                }
-            } catch (_: Exception) {}
+            logCrash("=== CRASH in UI: ${e}\n${e.stackTrace.joinToString("\n")} ===")
             throw e
         }
+    }
+
+    private fun logCrash(msg: String) {
+        try {
+            // 写到 Android/media 下的可共享目录，文件管理器直接能看到，无需存储权限
+            val dir = File("/sdcard/Android/media/com.ddai.pet/")
+            dir.mkdirs()
+            val logFile = File(dir, "xiaoke_crash.log")
+            FileOutputStream(logFile, true).use {
+                it.write("$msg\n".toByteArray())
+            }
+        } catch (_: Exception) {}
     }
 }
