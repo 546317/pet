@@ -61,18 +61,19 @@ body {
     display: block;
 }
 #controls {
+    display: none;
     position: absolute;
     bottom: -8px;
     left: 50%;
     transform: translateX(-50%);
-    display: none;
     background: rgba(20,20,30,0.82);
     border-radius: 20px;
     padding: 4px 6px;
     gap: 4px;
     z-index: 10;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    max-width: 250px;
 }
 #controls .ctl {
     width: 30px;
@@ -163,13 +164,22 @@ function randomWords(state) {
 }
 
 window.petEngine = {
-    onTap: function() { showBubble(randomWords(currentState)); },
+    onTap: function() { toggleControls(); },
     onDoubleTap: function() { showBubble("嗯。你叫我呀。"); },
     onLongPress: function() { showBubble("我一直都在。"); },
     onMultiTap: function() { showBubble("别戳啦，痒…"); },
     say: function(text) { if (text) showBubble(text); },
     setState: function(s) { if (STATES[s]) setState(s); }
 };
+
+function toggleControls() {
+    var c = document.body.classList;
+    if (c.contains("show-controls")) {
+        c.remove("show-controls");
+    } else {
+        c.add("show-controls");
+    }
+}
 
 function setState(s) {
     currentState = s;
@@ -187,11 +197,10 @@ function showBubble(text) {
     showBubble._t = setTimeout(function() { bubble.style.display = "none"; }, 2200);
 }
 
-petEl.addEventListener("mouseenter", function() {
-    document.body.classList.add("show-controls");
-});
-document.body.addEventListener("mouseleave", function() {
-    document.body.classList.remove("show-controls");
+// 点击小克本体也切换控制栏
+petEl.addEventListener("click", function(e) {
+    e.preventDefault();
+    toggleControls();
 });
 </script>
 </body>
