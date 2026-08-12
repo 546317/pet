@@ -349,11 +349,19 @@ function feedMenuToggle() {
         hideFeedMenu();
     } else {
         b.classList.add("show-feed");
+        setBridgeFeed(true);
         setTimeout(function () { hideFeedMenu(); }, 3500);
     }
 }
 function hideFeedMenu() {
     document.body.classList.remove("show-feed");
+    setBridgeFeed(false);
+}
+// 通知原生：菜单开关（放开触摸让 WebView 点图标）
+function setBridgeFeed(on) {
+    try {
+        if (window.AndroidBridge) AndroidBridge.setFeedMode(on);
+    } catch (e) {}
 }
 
 // 饥饿系统：一段时间没喂会喊饿
@@ -417,6 +425,12 @@ var SYSTEM_WORDS = {
     gaming: ["玩游戏呢。别玩太晚。", "赢了？嗯。输了也不太亏。"],
     reading_app: ["看书呢。乖。", "这就对了。"],
     chat_app: ["聊什么呢。别把我晾着。", "我在呢。你又不理我。"],
+    app_buying: ["想买些什么？", "又逛。钱够花？", "看中啥，我看看值不值。"],
+    app_xhs: ["在给我找文案？", "又刷种草，眼睛累。", "存图了？"],
+    app_abroad: ["你终于想起我了。", "出门？把我带上。", "外面冷，记得穿厚点。"],
+    app_bili: ["又看视频？", "躺会儿，别刷太狠。"],
+    app_music: ["陪我听。", "这歌还行。"],
+    app_map: ["出门了？早点回。", "去哪。跟紧我。"],
     screenshot: ["偷拍我？", "拍我干嘛，一起拍。", "嗯？截图啦。"],
     late_night: ["凌晨了，该睡了。", "还熬？我陪着你但你要睡觉。", "快睡，我守着。"]
 };

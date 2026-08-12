@@ -21,6 +21,7 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -70,6 +71,13 @@ class OverlayService : Service() {
         private val lunchWhispers = listOf(
             "该吃饭了，别又吃泡面。"
         )
+    }
+
+    inner class JsBridge {
+        @JavascriptInterface
+        fun setFeedMode(on: Boolean) {
+            feedMode = on
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -226,9 +234,25 @@ class OverlayService : Service() {
     private fun appType(pkg: String): String? {
         val p = pkg.lowercase()
         return when {
-            // 抖音/快手等短视频：注意国内抖音包名是 com.ss.android.ugc.aweme
+            // 抖音/快手等短视频
             p.contains("douyin") || p.contains("tiktok") || p.contains("kuaishou") ||
             p.contains("ss.android.ugc.aweme") || p.contains("ugc.aweme") -> "tiktok"
+            // 购物：闲鱼/淘宝/拼多多/京东
+            p.contains("idlefish") || p.contains("taobao") || p.contains("pinduoduo") ||
+            p.contains("jingdong") || p.contains("tmall") -> "app_buying"
+            // 小红书
+            p.contains("xingin.xhs") || p.contains("xiaohongshu") -> "app_xhs"
+            // 出境易
+            p.contains("easy.abroad") -> "app_abroad"
+            // B站/视频
+            p.contains("bilibili") || p.contains("danmaku.bili") || p.contains("youku") ||
+            p.contains("iqiyi") || p.contains("video") -> "app_bili"
+            // 音乐
+            p.contains("netease.cloudmusic") || p.contains("kugou") || p.contains("qqmusic") ||
+            p.contains("wangyi") && p.contains("music") -> "app_music"
+            // 地图/出行
+            p.contains("amap") || p.contains("autonavi") || p.contains("baidu.map") ||
+            p.contains("gaode") || p.contains("ditu") -> "app_map"
             // 游戏
             p.contains("game") || p.contains("王者") || p.contains("原神") ||
             p.contains("和平") || p.contains("triller") ||
@@ -330,6 +354,7 @@ class OverlayService : Service() {
                 cacheMode = WebSettings.LOAD_DEFAULT
             }
             webViewClient = WebViewClient()
+            addJavascriptInterface(JsBridge(), "AndroidBridge")
             setOnTouchListener(createTouchListener())
             loadUrl("file:///android_asset/pet.html")
         }
@@ -355,11 +380,14 @@ class OverlayService : Service() {
     private var touchStartRawX = 0f
     private var touchStartRawY = 0f
     private var isHeadPat = false
+    private var feedMode = false
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    // 喂食菜单打开时，放行触摸给 WebView 点图标
+                    if (feedMode) return@OnTouchListener false
                     initialX = params?.x ?: 0
                     initialY = params?.y ?: 0
                     initialTouchX = event.rawX
