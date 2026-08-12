@@ -33,11 +33,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
     
-    - name: Accept Android SDK licenses
-      run: |
-        yes | sdkmanager --licenses > /dev/null 2>&1 || true
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-    
     - name: Build debug APK
       run: bash gradlew assembleDebug
     
