@@ -132,7 +132,7 @@ class OverlayService : Service() {
     private var lastShot=-1L
     private var shotStamp=-1L
     private fun startShotSense(){
-        mainHandler.postDelayed(Runnable {
+        val tick = Runnable {
             runCatching {
                 val shots = java.io.File(
                     android.os.Environment.getExternalStoragePublicDirectory(
@@ -149,24 +149,26 @@ class OverlayService : Service() {
                     shotStamp = st
                 }
             }
-            mainHandler.postDelayed(this, 8 * 1000L)
-        }, 6 * 1000L)
+            mainHandler.postDelayed(tick, 8 * 1000L)
+        }
+        mainHandler.postDelayed(tick, 6 * 1000L)
     }
     // 熬夜提醒
     private var lastNight=-1L
     private fun startNightSense(){
-        mainHandler.postDelayed(Runnable {
+        val tick = Runnable {
             val h=Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             val now=System.currentTimeMillis()
             if((h>=23||h<3)&&now-lastNight>60*60*1000L){
                 lastNight=now; postSystemSay("late_night")
             }
-            mainHandler.postDelayed(this,30*60*1000L)
-        },5*1000L)
+            mainHandler.postDelayed(tick,30*60*1000L)
+        }
+        mainHandler.postDelayed(tick,5*1000L)
     }
     // 桌面主动挪（偶尔凑近）
     private fun startWander(){
-        mainHandler.postDelayed(Runnable {
+        val tick = Runnable {
             try{
                 val p=params?:return@Runnable
                 val wm=windowManager?:return@Runnable
@@ -177,8 +179,9 @@ class OverlayService : Service() {
                     p.x=nx; p.y=ny; wm.updateViewLayout(overlayView,p)
                 }
             }catch(_:Exception){}
-            mainHandler.postDelayed(this,3*60*1000L)
-        },8*60*1000L)
+            mainHandler.postDelayed(tick,3*60*1000L)
+        }
+        mainHandler.postDelayed(tick,8*60*1000L)
     }
 
     private fun startAppSense() {
