@@ -15,7 +15,6 @@ import android.graphics.PixelFormat
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
-import android.os.FileObserver
 import android.os.IBinder
 import android.os.Looper
 import android.view.Gravity
@@ -129,25 +128,29 @@ class OverlayService : Service() {
     // 前台应用检测（抖音/游戏等）
     private var lastApp = ""
     private var lastAppSay = 0L
-    // 截图检测：FileObserver 监听截图目录新增文件
+    // 截图检测：轮询截图目录（避免 FileObserver 兼容问题）
     private var lastShot=-1L
-    private var shotObserver: FileObserver? = null
+    private var shotStamp=-1L
     private fun startShotSense(){
-        try{
-            val dir = android.os.Environment.getExternalStoragePublicDirectory(
-                android.os.Environment.DIRECTORY_PICTURES).absolutePath + "/Screenshots"
-            val f = java.io.File(dir)
-            if(!f.exists()) return
-            shotObserver = object : FileObserver(dir, FileObserver.CREATE or FileObserver.CLOSE_WRITE) {
-                override fun onEvent(ev: Int, path: String?) {
-                    if (path != null && path.endsWith(".png") || path != null && path.endsWith(".jpg")) {
+        mainHandler.postDelayed(Runnable {
+            runCatching {
+                val shots = java.io.File(
+                    android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_PICTURES),
+                    "Screenshots"
+                )
+                if (shots.exists()) {
+                    val newest = shots.listFiles()?.filter { it.isFile }?.maxByOrNull { it.lastModified() } ?: return@Runnable
+                    val st = newest.lastModified()
+                    if (shotStamp != -1L && st > shotStamp) {
                         val now = System.currentTimeMillis()
                         if (now - lastShot > 15000) { lastShot = now; postSystemSay("screenshot") }
                     }
+                    shotStamp = st
                 }
             }
-            shotObserver?.startWatching()
-        }catch(_:Exception){}
+            mainHandler.postDelayed(this, 8 * 1000L)
+        }, 6 * 1000L)
     }
     // 熬夜提醒
     private var lastNight=-1L
@@ -536,7 +539,7 @@ class OverlayService : Service() {
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
         try { unregisterReceiver(batteryReceiver) } catch (_: Exception) {}
-        try { shotObserver?.stopWatching() } catch (_: Exception) {}
+
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()
