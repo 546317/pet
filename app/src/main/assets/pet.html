@@ -307,7 +307,7 @@ function poke() {
 var headTrack = [];
 function onHeadPat() {
     playHappy();
-    var pat = ["~好摸~", "嗯……舒服。", "再摸会儿。", "嘿嘿。"];
+    var pat = ["……别摸。", "行了。", "摸吧，你高兴就成。", "别没完。", "嗯。记住了。" , "你手往哪放。"];
     showBubble(pat[Math.floor(Math.random() * pat.length)]);
 }
 
@@ -335,10 +335,10 @@ function feedWater() {
     var words = ["谢了。水往低处流，记住了没。", "咕嘟。好喝。"];
     showBubble(words[Math.floor(Math.random() * words.length)]);
 }
-// 喂吃的（长按菜单里点食物）
+// 喂吃的（长按直接喂）
 function feedFood() {
     playHappy();
-    hideFeedMenu();
+    petEngine.onFed();
     var words = ["嚼嚼……还行。", "又是泡面？也好，别饿着。", "嗯，吃饱了就不饿了。", "你是不是想养胖我。"];
     showBubble(words[Math.floor(Math.random() * words.length)]);
 }
@@ -372,14 +372,12 @@ function startHunger() {
         var now = Date.now();
         if (now - lastFed > 4 * 60 * 1000) { // 4分钟没喂
             hunger++;
-            var hungryEl = document.getElementById("hungry");
             if (hunger >= 1 && hunger < 3) {
                 showBubble("饿了。喂点东西。" + (hunger === 1 ? "" : "……还不喂？"));
             } else if (hunger >= 3) {
                 playAnnoyed();
                 showBubble("再不喂我真走了。");
             }
-            hungryEl.style.display = "block";
             lastFed = now; // 重置计时，避免无限刷
         }
     }, 5 * 1000);
@@ -388,7 +386,7 @@ function startHunger() {
 window.petEngine = {
     onTap: function() { poke(); },
     onDoubleTap: function() { spawnHearts(); },
-    onLongPress: function() { feedMenuToggle(); },
+    onLongPress: function() { feedFood(); },
     onFed: function() {
         hunger = 0;
         lastFed = Date.now();
