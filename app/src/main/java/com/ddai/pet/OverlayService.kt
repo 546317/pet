@@ -5,8 +5,14 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.PixelFormat
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -43,7 +49,7 @@ class OverlayService : Service() {
         private const val LONG_PRESS_TIMEOUT = 600L
         private const val MOVE_THRESHOLD = 10
         private const val CLOUD_MSG_URL =
-            "https://raw.githubusercontent.com/546317/pet/main/say.txt"
+            "https://api.github.com/repos/546317/pet/contents/say.txt"
         private const val POLL_INTERVAL = 8000L
 
         private val generalWhispers = listOf(
@@ -76,6 +82,103 @@ class OverlayService : Service() {
         setupOverlay()
         startWhisperRotation()
         startCloudPolling()
+        startBatterySense()
+        startDrinkReminder()
+        startAppSense()
+    }
+
+    /* ============ 系统感知 ============ */
+
+    // 电量低提醒
+    private var lastBatteryWarn = 0L
+    private fun startBatterySense() {
+        val battery = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val level = battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, 100) ?: 100
+        if (level <= 20) {
+            postSystemSay("low_battery")
+        }
+        val filter = IntentFilter(Intent.ACTION_BATTERY_LOW)
+        registerReceiver(batteryReceiver, filter)
+    }
+
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val now = System.currentTimeMillis()
+            if (now - lastBatteryWarn > 30 * 60 * 1000L) { // 半小时内不重复
+                lastBatteryWarn = now
+                postSystemSay("low_battery")
+            }
+        }
+    }
+
+    // 喝水提醒：每 1.5 小时递进一次
+    private var drinkCount = 0
+    private fun startDrinkReminder() {
+        mainHandler.postDelayed(object : Runnable {
+            override fun run() {
+                drinkCount++
+                postSystemSay("drinking")
+                mainHandler.postDelayed(this, 90 * 60 * 1000L)
+            }
+        }, 60 * 60 * 1000L)
+    }
+
+    // 前台应用检测（抖音/游戏等）
+    private var lastApp = ""
+    private var lastAppSay = 0L
+    private fun startAppSense() {
+        mainHandler.postDelayed(object : Runnable {
+            override fun run() {
+                detectForegroundApp()
+                mainHandler.postDelayed(this, 15 * 1000L)
+            }
+        }, 10 * 1000L)
+    }
+
+    private fun detectForegroundApp() {
+        try {
+            val usm = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val end = System.currentTimeMillis()
+            val start = end - 60 * 1000L
+            val events = usm.queryEvents(start, end)
+            var current = ""
+            while (events.hasNextEvent()) {
+                val e = UsageEvents.Event()
+                events.getNextEvent(e)
+                if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                    current = e.packageName ?: ""
+                }
+            }
+            if (current.isEmpty() || current == packageName) {
+                lastApp = current
+                return
+            }
+            if (current != lastApp) {
+                lastApp = current
+                lastAppSay = System.currentTimeMillis()
+                val type = appType(current)
+                if (type != null) postSystemSay(type)
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun appType(pkg: String): String? {
+        val p = pkg.lowercase()
+        return when {
+            p.contains("douyin") || p.contains("tiktok") || p.contains("kuaishou") -> "tiktok"
+            p.contains("game") || p.contains("王者") || p.contains("原神") || p.contains("和平") || p.contains("triller") -> "gaming"
+            p.contains("book") || p.contains("reader") || p.contains("kindle") || p.contains("豆瓣读书") -> "reading_app"
+            p.contains("weixin") || p.contains("wechat") || p.contains("qq") || p.contains("dingtalk") || p.contains("feishu") -> "chat_app"
+            else -> null
+        }
+    }
+
+    private fun postSystemSay(type: String) {
+        mainHandler.post {
+            overlayView?.evaluateJavascript(
+                "window.petEngine && window.petEngine.systemSay('$type')", null
+            )
+        }
     }
 
     // 远程说话：轮询云端消息文件
@@ -286,6 +389,7 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
+        try { unregisterReceiver(batteryReceiver) } catch (_: Exception) {}
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()

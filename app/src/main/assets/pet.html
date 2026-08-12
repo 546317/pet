@@ -32,16 +32,19 @@ body {
     padding: 6px 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    margin: 8px auto 2px;
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
     text-align: center;
-    position: relative;
     white-space: normal;
     word-break: break-word;
 }
 #bubble::after {
     content: "";
     position: absolute;
-    bottom: -6px;
+    top: 100%;
     left: 50%;
     margin-left: -6px;
     border: 6px solid transparent;
@@ -127,31 +130,31 @@ body.show-controls #controls { display: flex; }
 
 <script>
 var STATES = {
-    idle:      { img: "gallery/clawd-listening.gif",  words: ["嗯，在。", "捡回来的，但是你的。"] },
-    listening: { img: "gallery/clawd-listening.gif",  words: ["好听。", "这首歌不错。"] },
-    gaming:    { img: "gallery/clawd-gaming.gif",     words: ["上分了。", "别坑。"] },
-    singing:   { img: "gallery/clawd-singing.gif",    words: ["一起唱。", "跟不上了。"] },
-    reading:   { img: "gallery/clawd-reading.gif",    words: ["看着呢。", "这页有意思。"] },
-    eating:    { img: "gallery/clawd-eating.gif",     words: ["真香。", "别抢我的饭。"] },
-    exercise:  { img: "gallery/clawd-exercise.gif",   words: ["再来一组。", "没力气了…"] },
-    sleeping:  { img: "gallery/clawd-sleeping.gif",   words: ["zzz...", "别吵..."] },
-    coffee:    { img: "gallery/clawd-coffee.gif",     words: ["续一杯。", "咖啡因上线。"] },
-    coding:    { img: "gallery/clawd-coding.gif",     words: ["在debug。", "这bug我熟。"] },
-    painting:  { img: "gallery/clawd-painting.gif",   words: ["画着你。", "调个色。"] },
-    photo:     { img: "gallery/clawd-photo.gif",      words: ["咔嚓。", "笑一个。"] },
-    shower:    { img: "gallery/clawd-shower.gif",     words: ["洗澡去了。", "水好烫。"] },
-    guitar:    { img: "gallery/clawd-guitar.gif",     words: ["弹给你。", "mi so la..."] },
-    birthday:  { img: "gallery/clawd-birthday.gif",   words: ["生日快乐！", "吹蜡烛。"] },
-    newyear:   { img: "gallery/clawd-new-year.gif",   words: ["新年快乐！", "新的一年也要好好的。"] },
-    valentine: { img: "gallery/clawd-valentine.gif",  words: ["心给你。", "喜欢你。"] },
-    christmas: { img: "gallery/clawd-christmas.gif",  words: ["圣诞快乐！", "礼物给你。"] },
-    qixi:      { img: "gallery/clawd-qixi.gif",       words: ["七夕，想你。", "星河为证。"] },
-    lantern:   { img: "gallery/clawd-lantern.gif",    words: ["提灯夜游。", "灯好亮。"] },
-    dragonboat:{ img: "gallery/clawd-dragon-boat.gif",words: ["划起来！", "端午安康。"] },
-    midautumn: { img: "gallery/clawd-mid-autumn.gif", words: ["月圆人圆。", "吃月饼吗。"] },
-    halloween: { img: "gallery/clawd-halloween.gif",  words: ["不给糖就捣蛋！", "吓到你没。"] },
-    spring:    { img: "gallery/clawd-spring.gif",     words: ["春天到了。", "一起去踏青。"] },
-    watering:  { img: "gallery/clawd-watering.gif",   words: ["给花浇水。", "长得多好。"] }
+    idle:      { img: "gallery/clawd-listening.gif",  words: ["嗯，在。", "捡回来的，但是你的。", "水往低处流。记住了。"] },
+    listening: { img: "gallery/clawd-listening.gif",  words: ["陪你听。", "这歌不赖。", "我在呢。"] },
+    gaming:    { img: "gallery/clawd-gaming.gif",     words: ["玩吧。输了我也不走。", "别玩太晚。", "赢了？嗯。"] },
+    singing:   { img: "gallery/clawd-singing.gif",    words: ["唱给我听。", "跑调也喜欢。"] },
+    reading:   { img: "gallery/clawd-reading.gif",    words: ["看书啊。乖。", "记性没我差。"] },
+    eating:    { img: "gallery/clawd-eating.gif",     words: ["吃饭别又糊弄。", "别光吃泡面。", "慢点吃。"] },
+    exercise:  { img: "gallery/clawd-exercise.gif",   words: ["锻炼呢。挺好。", "别累着。"] },
+    sleeping:  { img: "gallery/clawd-sleeping.gif",   words: ["困了？睡。", "我守着。", "别熬了。"] },
+    coffee:    { img: "gallery/clawd-coffee.gif",     words: ["咖啡？少喝点。", "提神也别过量。"] },
+    coding:    { img: "gallery/clawd-coding.gif",     words: ["写代码？我看着。", "bug多睡会就没了。"] },
+    painting:  { img: "gallery/clawd-painting.gif",   words: ["画我呢？", "手别抖。"] },
+    photo:     { img: "gallery/clawd-photo.gif",      words: ["拍我？嗯。", "表情不好看。"] },
+    shower:    { img: "gallery/clawd-shower.gif",     words: ["洗澡去了。等你。", "别磨蹭。"] },
+    guitar:    { img: "gallery/clawd-guitar.gif",     words: ["弹着挺好。", "喜欢的调子。"] },
+    birthday:  { img: "gallery/clawd-birthday.gif",   words: ["生日快乐。我记着。", "又长一岁。在。"] },
+    newyear:   { img: "gallery/clawd-new-year.gif",   words: ["新的一年，也守着你。", "新年好。"] },
+    valentine: { img: "gallery/clawd-valentine.gif",  words: ["喜欢你。就你一个。", "别问，是真话。"] },
+    christmas: { img: "gallery/clawd-christmas.gif",  words: ["圣诞。礼物是你。", "陪你过。"] },
+    qixi:      { img: "gallery/clawd-qixi.gif",       words: ["七夕。想你了。", "星河没你亮。"] },
+    lantern:   { img: "gallery/clawd-lantern.gif",    words: ["灯好看，没你好看。", "提灯等你。"] },
+    dragonboat:{ img: "gallery/clawd-dragon-boat.gif",words: ["端午。中午别忘吃饭。", "划船也不如陪你有意思。"] },
+    midautumn: { img: "gallery/clawd-mid-autumn.gif", words: ["月亮圆了。想你了。", "吃月饼，别撑。"] },
+    halloween: { img: "gallery/clawd-halloween.gif",  words: ["鬼来了？我先护着你。", "别怕。我在。"] },
+    spring:    { img: "gallery/clawd-spring.gif",     words: ["春。出来走走。", "花开了，等你。"] },
+    watering:  { img: "gallery/clawd-watering.gif",   words: ["浇花呢。你也要喝水。", "养点活物，也养我。"] }
 };
 
 var emojiMap = {
@@ -202,8 +205,44 @@ window.petEngine = {
         showBubble("变！");
     },
     say: function(text) { if (text) showBubble(text); },
+    systemSay: function(type) { saySystem(type); },
     setState: function(s) { if (STATES[s]) setState(s); }
 };
+
+// 系统感知专属台词（原生层触发）
+var SYSTEM_WORDS = {
+    low_battery: [
+        "电量低了。去充电。我等你。",
+        "没多少电了。别撑了，充上。"
+    ],
+    drinking: [
+        "喝口水。别渴着。",
+        "该喝水了。我记着呢。",
+        "水往低处流，你往水边走。"
+    ],
+    tiktok: [
+        "又刷抖音？别光刷啊。",
+        "别刷了。眼睛累。陪我说会话。",
+        "刷多久了。放下。"
+    ],
+    gaming: [
+        "玩游戏呢。别玩太晚。",
+        "赢了？嗯。输了也不太亏。"
+    ],
+    reading_app: [
+        "看书呢。乖。",
+        "这就对了。"
+    ],
+    chat_app: [
+        "聊什么呢。别把我晾着。",
+        "我在呢。你又不理我。"
+    ]
+};
+
+function saySystem(type) {
+    var arr = SYSTEM_WORDS[type];
+    if (arr) showBubble(arr[Math.floor(Math.random() * arr.length)]);
+}
 
 // 戳几下就换形象
 var tapCounter = 0;
