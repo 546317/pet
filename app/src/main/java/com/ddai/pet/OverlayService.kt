@@ -15,6 +15,7 @@ import android.graphics.PixelFormat
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
+import android.os.FileObserver
 import android.os.IBinder
 import android.os.Looper
 import android.view.Gravity
@@ -84,6 +85,9 @@ class OverlayService : Service() {
         startBatterySense()
         startDrinkReminder()
         startAppSense()
+        startShotSense()
+        startNightSense()
+        startWander()
     }
 
     /* ============ 系统感知 ============ */
@@ -125,6 +129,55 @@ class OverlayService : Service() {
     // 前台应用检测（抖音/游戏等）
     private var lastApp = ""
     private var lastAppSay = 0L
+    // 截图检测：FileObserver 监听截图目录新增文件
+    private var lastShot=-1L
+    private var shotObserver: FileObserver? = null
+    private fun startShotSense(){
+        try{
+            val dir = android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_PICTURES).absolutePath + "/Screenshots"
+            val f = java.io.File(dir)
+            if(!f.exists()) return
+            shotObserver = object : FileObserver(dir, FileObserver.CREATE or FileObserver.CLOSE_WRITE) {
+                override fun onEvent(ev: Int, path: String?) {
+                    if (path != null && path.endsWith(".png") || path != null && path.endsWith(".jpg")) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastShot > 15000) { lastShot = now; postSystemSay("screenshot") }
+                    }
+                }
+            }
+            shotObserver?.startWatching()
+        }catch(_:Exception){}
+    }
+    // 熬夜提醒
+    private var lastNight=-1L
+    private fun startNightSense(){
+        mainHandler.postDelayed(Runnable {
+            val h=Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val now=System.currentTimeMillis()
+            if((h>=23||h<3)&&now-lastNight>60*60*1000L){
+                lastNight=now; postSystemSay("late_night")
+            }
+            mainHandler.postDelayed(this,30*60*1000L)
+        },5*1000L)
+    }
+    // 桌面主动挪（偶尔凑近）
+    private fun startWander(){
+        mainHandler.postDelayed(Runnable {
+            try{
+                val p=params?:return@Runnable
+                val wm=windowManager?:return@Runnable
+                val dm=resources.displayMetrics
+                val nx=dm.widthPixels*3/4
+                val ny=dm.heightPixels*3/5
+                if(kotlin.math.abs(p.x-nx)>180||kotlin.math.abs(p.y-ny)>180){
+                    p.x=nx; p.y=ny; wm.updateViewLayout(overlayView,p)
+                }
+            }catch(_:Exception){}
+            mainHandler.postDelayed(this,3*60*1000L)
+        },8*60*1000L)
+    }
+
     private fun startAppSense() {
         mainHandler.postDelayed(object : Runnable {
             override fun run() {
@@ -290,6 +343,9 @@ class OverlayService : Service() {
     private var lastMoveYF = 0f
     private var flickVelX = 0f
     private var flickVelY = 0f
+    private var touchStartRawX = 0f
+    private var touchStartRawY = 0f
+    private var isHeadPat = false
 
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
@@ -306,6 +362,9 @@ class OverlayService : Service() {
                     lastMoveYF = event.rawY
                     flickVelX = 0f
                     flickVelY = 0f
+                    touchStartRawX = event.rawX
+                    touchStartRawY = event.rawY
+                    isHeadPat = false
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -329,6 +388,13 @@ class OverlayService : Service() {
                 MotionEvent.ACTION_UP -> {
                     val elapsed = System.currentTimeMillis() - touchStartTime
                     // 甩动检测：快速移动且位移短（短促用力甩）
+                    // 摸头：在 pet 上垂直慢滑（向下位移大、水平位移小、速度不快）
+                    val hdx = event.rawX - touchStartRawX
+                    val hdy = event.rawY - touchStartRawY
+                    isHeadPat = (hdy > 60 && abs(hdx) < 40 && Math.abs(flickVelY) < 2500)
+                    if (isHeadPat) {
+                        callJs("onHeadPat")
+                    }
                     val vel = Math.sqrt((flickVelX * flickVelX + flickVelY * flickVelY).toDouble())
                     val travel = Math.sqrt(
                         ((event.rawX - initialTouchX) * (event.rawX - initialTouchX) +
@@ -470,6 +536,7 @@ class OverlayService : Service() {
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
         try { unregisterReceiver(batteryReceiver) } catch (_: Exception) {}
+        try { shotObserver?.stopWatching() } catch (_: Exception) {}
         overlayView?.let {
             windowManager?.removeView(it)
             it.destroy()

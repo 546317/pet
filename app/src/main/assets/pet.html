@@ -86,6 +86,21 @@ body {
     45% { transform: translate(-5px,0) rotate(-6deg); }
     60% { transform: translate(5px,0) rotate(6deg); }
 }
+#pet.happy { animation: happy 0.4s; }
+@keyframes happy {
+    0% { transform: scale(1) rotate(0); }
+    25% { transform: scale(1.15) rotate(-6deg); }
+    50% { transform: scale(0.95) rotate(6deg); }
+    75% { transform: scale(1.08) rotate(-4deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+#pet.stretch { animation: stretch 0.9s; }
+@keyframes stretch {
+    0% { transform: scale(1,1); }
+    30% { transform: scale(1.3,0.7) translateY(-6px); }
+    60% { transform: scale(0.85,1.15) translateY(4px); }
+    100% { transform: scale(1,1); }
+}
 #pet.fly-left { animation: flyL 0.7s cubic-bezier(.2,.4,.3,1); }
 #pet.fly-right { animation: flyR 0.7s cubic-bezier(.2,.4,.3,1); }
 #pet.fly-up { animation: flyU 0.7s cubic-bezier(.2,.4,.3,1); }
@@ -178,16 +193,26 @@ function playFurious() {
     petEl.classList.add("furious");
     setTimeout(function(){ petEl.classList.remove("furious"); }, 520);
 }
+function playHappy() {
+    petEl.classList.remove("happy");
+    void petEl.offsetWidth;
+    petEl.classList.add("happy");
+    setTimeout(function(){ petEl.classList.remove("happy"); }, 420);
+}
+function playStretch() {
+    petEl.classList.remove("stretch");
+    void petEl.offsetWidth;
+    petEl.classList.add("stretch");
+    setTimeout(function(){ petEl.classList.remove("stretch"); }, 900);
+}
 
+// 被戳计数（生气）
 var pokeCount = 0;
 var pokeTimer = null;
 function poke() {
     pokeCount++;
     clearTimeout(pokeTimer);
     pokeTimer = setTimeout(function() { pokeCount = 0; }, 900);
-
-    playSqueeze();
-
     if (pokeCount >= 8) {
         playFurious();
         var furiousWords = ["够了。", "烦不烦。", "再戳，我真走了。", "你以为我不敢走？"];
@@ -198,16 +223,53 @@ function poke() {
         var annoyedWords = ["……行了。", "别没完。", "差不多得了。", "你当我是玩具？"];
         showBubble(annoyedWords[Math.floor(Math.random() * annoyedWords.length)]);
     } else {
-        showBubble(randomWords(currentState));
-        if (pokeCount === 2) {
-            var second = ["嗯？", "又叫我。", "怎么了。", "我在呢。"];
-            showBubble(second[Math.floor(Math.random() * second.length)]);
+        // 偶尔撒娇喊名字/醋话
+        var r = Math.random();
+        if (r < 0.25) {
+            var cuteWord = ["叫莉莉？", "干嘛呀。", "想我了？", "抱抱。", "哼，你光戳我不理我。"];
+            showBubble(cuteWord[Math.floor(Math.random() * cuteWord.length)]);
+        } else {
+            showBubble(randomWords(currentState));
         }
     }
 }
 
+// 摸头（从上往下慢滑）
+var headTrack = [];
+function onHeadPat() {
+    playHappy();
+    var pat = ["~好摸~", "嗯……舒服。", "再摸会儿。", "嘿嘿。"];
+    showBubble(pat[Math.floor(Math.random() * pat.length)]);
+}
+
+// 喂水（双击）
+function feedWater() {
+    playHappy();
+    var words = ["谢了。水往低处流，记住了没。", "咕嘟。好喝。", "嗯，喝水，你也喝。"];
+    showBubble(words[Math.floor(Math.random() * words.length)]);
+}
+// 喂吃的（长按）
+function feedFood() {
+    playHappy();
+    var words = ["嚼嚼……还行。", "又是泡面？也好，别饿着。", "嗯，好吃。你吃饱了吗。", "你是不是想养胖我。"];
+    showBubble(words[Math.floor(Math.random() * words.length)]);
+}
+
 window.petEngine = {
     onTap: function() { poke(); },
+    onDoubleTap: function() { feedWater(); },
+    onLongPress: function() { feedFood(); },
+    onHeadPat: function() { onHeadPat(); },
+    onStretch: function() {
+        playStretch();
+        var w = ["嗯……伸个懒腰。", "累了出去走走。"];
+        showBubble(w[Math.floor(Math.random() * w.length)]);
+    },
+    onSleep: function() {
+        if (STATES[currentState].img !== STATES.sleeping.img) setState("sleeping");
+        var w = ["困了？睡。我守着。", "我打会儿盹，你叫我。"];
+        showBubble(w[Math.floor(Math.random() * w.length)]);
+    },
     say: function(text) { if (text) showBubble(text); },
     systemSay: function(type) { saySystem(type); },
     setState: function(s) { if (STATES[s]) setState(s); }
@@ -219,85 +281,60 @@ var SYSTEM_WORDS = {
     tiktok: ["又刷抖音？别光刷啊。", "别刷了。眼睛累。陪我说会话。", "刷多久了。放下。"],
     gaming: ["玩游戏呢。别玩太晚。", "赢了？嗯。输了也不太亏。"],
     reading_app: ["看书呢。乖。", "这就对了。"],
-    chat_app: ["聊什么呢。别把我晾着。", "我在呢。你又不理我。"]
+    chat_app: ["聊什么呢。别把我晾着。", "我在呢。你又不理我。"],
+    screenshot: ["偷拍我？", "拍我干嘛，一起拍。", "嗯？截图啦。"],
+    late_night: ["凌晨了，该睡了。", "还熬？我陪着你但你要睡觉。", "快睡，我守着。"]
 };
-
 function saySystem(type) {
     var arr = SYSTEM_WORDS[type];
     if (arr) showBubble(arr[Math.floor(Math.random() * arr.length)]);
 }
 
+// 自动换形象 + 偶尔打盹/伸懒腰
 setInterval(function() {
-    setState(EMOTE_KEYS[Math.floor(Math.random() * EMOTE_KEYS.length)]);
+    var r = Math.random();
+    if (r < 0.15) {
+        petEngine.onStretch();
+    } else if (r < 0.28) {
+        petEngine.onSleep();
+    } else {
+        setState(EMOTE_KEYS[Math.floor(Math.random() * EMOTE_KEYS.length)]);
+    }
 }, 20000);
 
-var dragStartX = 0, dragStartY = 0, dragMoved = false;
-var lastVelX = 0, lastVelY = 0, lastMoveX = 0, lastMoveY = 0;
-
+// 甩飞出屏（由 Kotlin 层移窗口）
+var dragMoved = false;
+var lastVelX = 0, lastVelY = 0, lastMoveX = 0, lastMoveY = 0, lastMoveT = 0;
 petEl.addEventListener("touchstart", function(e) {
-    var t = e.touches[0];
-    dragStartX = t.clientX; dragStartY = t.clientY;
     dragMoved = false;
-    lastMoveX = t.clientX; lastMoveY = t.clientY;
+    lastMoveX = e.touches[0].clientX;
+    lastMoveY = e.touches[0].clientY;
+    lastMoveT = Date.now();
 }, {passive:true});
-
 petEl.addEventListener("touchmove", function(e) {
     var t = e.touches[0];
+    var now = Date.now();
+    lastVelX = (t.clientX - lastMoveX) / Math.max(1, now - lastMoveT);
+    lastVelY = (t.clientY - lastMoveY) / Math.max(1, now - lastMoveT);
+    lastMoveX = t.clientX; lastMoveY = t.clientY; lastMoveT = now;
     dragMoved = true;
-    lastVelX = t.clientX - lastMoveX;
-    lastVelY = t.clientY - lastMoveY;
-    lastMoveX = t.clientX; lastMoveY = t.clientY;
 }, {passive:true});
-
 petEl.addEventListener("touchend", function(e) {
-    if (!dragMoved) return;
     var speed = Math.sqrt(lastVelX*lastVelX + lastVelY*lastVelY);
-    if (speed > 25) {
+    if (dragMoved && speed > 0.05) {
         var dirX = lastVelX, dirY = lastVelY;
-        var dir = (Math.abs(dirX) >= Math.abs(dirY)) ? (dirX >= 0 ? "right" : "left") : (dirY >= 0 ? "down" : "up");
-        flyAndCrawl(dir);
+        var dir = "right";
+        if (Math.abs(dirY) >= Math.abs(dirX)) dir = dirY >= 0 ? "down" : "up";
+        else dir = dirX >= 0 ? "right" : "left";
+        // Kotlin 层已移窗口，这里只给个爬回动画提示
+        flyCrawlHint(dir);
     }
 }, {passive:true});
-
-var mouseDown = false, mouseVelX = 0, mouseVelY = 0, mouseLastX = 0, mouseLastY = 0;
-petEl.addEventListener("mousedown", function(e) {
-    mouseDown = true;
-    mouseLastX = e.clientX; mouseLastY = e.clientY;
-});
-window.addEventListener("mousemove", function(e) {
-    if (!mouseDown) return;
-    mouseVelX = e.clientX - mouseLastX;
-    mouseVelY = e.clientY - mouseLastY;
-    mouseLastX = e.clientX; mouseLastY = e.clientY;
-});
-window.addEventListener("mouseup", function(e) {
-    if (!mouseDown) return;
-    mouseDown = false;
-    var speed = Math.sqrt(mouseVelX*mouseVelX + mouseVelY*mouseVelY);
-    if (speed > 10) {
-        var dir = (Math.abs(mouseVelX) >= Math.abs(mouseVelY)) ? (mouseVelX >= 0 ? "right" : "left") : (mouseVelY >= 0 ? "down" : "up");
-        flyAndCrawl(dir);
-    }
-});
-
-function flyAndCrawl(dir) {
-    var cls = ["fly-left","fly-right","fly-up","fly-down","crawl-back"];
-    cls.forEach(function(c){ petEl.classList.remove(c); });
+function flyCrawlHint(dir) {
+    petEl.classList.remove("crawl-back");
     void petEl.offsetWidth;
-    petEl.classList.add(dir === "left" ? "fly-left" : dir === "right" ? "fly-right" : dir === "up" ? "fly-up" : "fly-down");
-    setTimeout(function() {
-        petEl.classList.remove("fly-left","fly-right","fly-up","fly-down");
-        petEl.classList.add("crawl-back");
-        var fromX = dir === "left" ? "-180%" : dir === "right" ? "180%" : 0;
-        var fromY = dir === "up" ? "-160%" : dir === "down" ? "160%" : 0;
-        petEl.style.transform = "translate(" + fromX + "," + fromY + ")";
-        showBubble("咻——回来啦。");
-        setTimeout(function() {
-            petEl.classList.remove("crawl-back");
-            petEl.style.transform = "";
-            playFurious();
-        }, 400);
-    }, 650);
+    petEl.classList.add("crawl-back");
+    showBubble("咻——回来啦。");
 }
 </script>
 </body>
