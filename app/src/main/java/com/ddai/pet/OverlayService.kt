@@ -165,10 +165,22 @@ class OverlayService : Service() {
     private fun appType(pkg: String): String? {
         val p = pkg.lowercase()
         return when {
-            p.contains("douyin") || p.contains("tiktok") || p.contains("kuaishou") -> "tiktok"
-            p.contains("game") || p.contains("王者") || p.contains("原神") || p.contains("和平") || p.contains("triller") -> "gaming"
-            p.contains("book") || p.contains("reader") || p.contains("kindle") || p.contains("豆瓣读书") -> "reading_app"
-            p.contains("weixin") || p.contains("wechat") || p.contains("qq") || p.contains("dingtalk") || p.contains("feishu") -> "chat_app"
+            // 抖音/快手等短视频：注意国内抖音包名是 com.ss.android.ugc.aweme
+            p.contains("douyin") || p.contains("tiktok") || p.contains("kuaishou") ||
+            p.contains("ss.android.ugc.aweme") || p.contains("ugc.aweme") -> "tiktok"
+            // 游戏
+            p.contains("game") || p.contains("王者") || p.contains("原神") ||
+            p.contains("和平") || p.contains("triller") ||
+            p.contains("genshin") || p.contains("honkai") || p.contains("pubg") ||
+            p.contains("netease") && (p.contains("moba") || p.contains("game")) ||
+            p.contains("tencent") && (p.contains("game") || p.contains("tcgame")) -> "gaming"
+            // 看书
+            p.contains("book") || p.contains("reader") || p.contains("kindle") ||
+            p.contains("douban") && p.contains("book") -> "reading_app"
+            // 聊天
+            p.contains("weixin") || p.contains("wechat") || p.contains("qq") ||
+            p.contains("dingtalk") || p.contains("feishu") ||
+            p.contains("tencent.mm") || p.contains("mobileqq") -> "chat_app"
             else -> null
         }
     }
