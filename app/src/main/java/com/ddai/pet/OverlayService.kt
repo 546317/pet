@@ -56,8 +56,7 @@ class OverlayService : Service() {
             "捡回来的，但是你的。",
             "嗯，在。",
             "水往低处流。记住了。",
-            "别刷太久，眼睛累。",
-            "我在呢。"
+                        "我在呢。"
         )
         private val lateNightWhispers = listOf(
             "还不睡？",
@@ -285,6 +284,13 @@ class OverlayService : Service() {
     private var hasMoved = false
     private var tapCount = 0
 
+    // 甩动检测字段
+    private var lastMoveTimeF = 0L
+    private var lastMoveXF = 0f
+    private var lastMoveYF = 0f
+    private var flickVelX = 0f
+    private var flickVelY = 0f
+
     private fun createTouchListener(): View.OnTouchListener {
         return View.OnTouchListener { _, event ->
             when (event.action) {
@@ -295,11 +301,23 @@ class OverlayService : Service() {
                     initialTouchY = event.rawY
                     touchStartTime = System.currentTimeMillis()
                     hasMoved = false
+                    lastMoveTimeF = System.currentTimeMillis()
+                    lastMoveXF = event.rawX
+                    lastMoveYF = event.rawY
+                    flickVelX = 0f
+                    flickVelY = 0f
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = (event.rawX - initialTouchX).toInt()
                     val dy = (event.rawY - initialTouchY).toInt()
+                    val now = System.currentTimeMillis()
+                    val dt = (now - lastMoveTimeF).coerceAtLeast(1)
+                    flickVelX = (event.rawX - lastMoveXF) * 1000f / dt
+                    flickVelY = (event.rawY - lastMoveYF) * 1000f / dt
+                    lastMoveTimeF = now
+                    lastMoveXF = event.rawX
+                    lastMoveYF = event.rawY
                     if (abs(dx) > MOVE_THRESHOLD || abs(dy) > MOVE_THRESHOLD) {
                         hasMoved = true
                         params?.x = initialX + dx
@@ -310,7 +328,21 @@ class OverlayService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     val elapsed = System.currentTimeMillis() - touchStartTime
-                    if (!hasMoved) {
+                    // 甩动检测：快速移动且位移短（短促用力甩）
+                    val vel = Math.sqrt((flickVelX * flickVelX + flickVelY * flickVelY).toDouble())
+                    val travel = Math.sqrt(
+                        ((event.rawX - initialTouchX) * (event.rawX - initialTouchX) +
+                        (event.rawY - initialTouchY) * (event.rawY - initialTouchY)).toDouble()
+                    )
+                    if (hasMoved && vel > 5000 && travel < 500) {
+                        // 甩出去，从远处爬回来
+                        val dir = if (Math.abs(flickVelX) >= Math.abs(flickVelY)) {
+                            if (flickVelX >= 0) "right" else "left"
+                        } else {
+                            if (flickVelY >= 0) "down" else "up"
+                        }
+                        flickWindow(dir)
+                    } else if (!hasMoved) {
                         when {
                             elapsed > LONG_PRESS_TIMEOUT -> {
                                 tapCount = 0
@@ -343,6 +375,52 @@ class OverlayService : Service() {
         overlayView?.evaluateJavascript(
             "window.petEngine && window.petEngine.$method()", null
         )
+    }
+
+    // 甩飞：整个窗口飞出去，再从远处爬回来
+    private fun flickWindow(dir: String) {
+        val wm = windowManager ?: return
+        val p = params ?: return
+        val baseX = p.x
+        val baseY = p.y
+        val flyX = when (dir) {
+            "left" -> -400
+            "right" -> 400
+            else -> 0
+        }
+        val flyY = when (dir) {
+            "up" -> -300
+            "down" -> 300
+            else -> 0
+        }
+        val steps = 12
+        for (i in 1..steps) {
+            val t = i.toFloat() / steps
+            val ease = (1 - (1 - t) * (1 - t)) // 加速飞出
+            val nx = (baseX + flyX * ease).toInt()
+            val ny = (baseY + flyY * ease).toInt()
+            mainHandler.postDelayed({ 
+                val cp = params ?: return@postDelayed
+                cp.x = nx
+                cp.y = ny
+                try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {}
+            }, i * 45L)
+        }
+        // 短暂停顿后，从远处走回来（缓动回弹）
+        mainHandler.postDelayed({
+            for (i in steps downTo 1) {
+                val t = (steps - i + 1).toFloat() / steps
+                val easeBack = t * t // 减速爬回
+                val bx = (baseX + flyX * (1 - easeBack)).toInt()
+                val by = (baseY + flyY * (1 - easeBack)).toInt()
+                mainHandler.postDelayed({
+                    val cp = params ?: return@postDelayed
+                    cp.x = bx
+                    cp.y = by
+                    try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {}
+                }, i * 60L)
+            }
+        }, 700L)
     }
 
     private fun startWhisperRotation() {
