@@ -25,6 +25,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.provider.MediaStore
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -142,28 +143,35 @@ class OverlayService : Service() {
     private fun startShotSense(){
         mainHandler.postDelayed(object : Runnable {
             override fun run() {
-                runCatching {
-                    val shots = java.io.File(
-                        android.os.Environment.getExternalStoragePublicDirectory(
-                            android.os.Environment.DIRECTORY_PICTURES),
-                        "Screenshots"
+                try {
+                    val collection = android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    val projection = arrayOf(
+                        android.provider.MediaStore.Images.Media._ID,
+                        android.provider.MediaStore.Images.Media.DISPLAY_NAME,
+                        android.provider.MediaStore.Images.Media.DATE_ADDED
                     )
-                    if (shots.exists()) {
-                        val newest = shots.listFiles()?.filter { it.isFile }?.maxByOrNull { it.lastModified() } ?: return@run
-                        val st = newest.lastModified()
-                        if (shotStamp != -1L && st > shotStamp) {
-                            val now = System.currentTimeMillis()
-                            if (now - lastShot > 15000) { lastShot = now; postSystemSay("screenshot") }
+                    contentResolver.query(collection, projection, null, null,
+                        android.provider.MediaStore.Images.Media.DATE_ADDED + " DESC").use { c ->
+                        if (c != null && c.moveToFirst()) {
+                            val name = c.getString(c.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DISPLAY_NAME))
+                            val added = c.getLong(c.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DATE_ADDED)) * 1000L
+                            val isShot = name.contains("Screenshot") || name.contains("screenshot") ||
+                                name.contains("Screen_") || name.contains("IMG_")
+                            if (isShot) {
+                                if (shotStamp != -1L && added > shotStamp) {
+                                    val now = System.currentTimeMillis()
+                                    if (now - lastShot > 15000) { lastShot = now; postSystemSay("screenshot") }
+                                }
+                                shotStamp = added
+                            }
                         }
-                        shotStamp = st
                     }
-                }
-                mainHandler.postDelayed(this, 8 * 1000L)
+                } catch (_: Exception) {}
+                mainHandler.postDelayed(this, 6 * 1000L)
             }
-        }, 6 * 1000L)
+        }, 4 * 1000L)
     }
-    // 熬夜提醒
-    private var lastNight=-1L
+
     private fun startNightSense(){
         mainHandler.postDelayed(object : Runnable {
             override fun run() {
