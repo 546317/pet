@@ -24,16 +24,18 @@ body {
 }
 #bubble {
     display: none;
-    max-width: 150px;
+    max-width: 112px;
+    max-height: 66px;
+    overflow-y: auto;
     background: rgba(255,255,255,0.95);
     color: #333;
-    font-size: 12px;
-    line-height: 1.5;
-    padding: 6px 10px;
-    border-radius: 12px;
+    font-size: 11px;
+    line-height: 1.35;
+    padding: 4px 6px;
+    border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     position: absolute;
-    top: 4px;
+    top: 2px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
@@ -57,6 +59,67 @@ body {
     transition: transform 0.06s;
     will-change: transform;
     cursor: grab;
+}
+/* 喂食小图标条 */
+#feedMenu {
+    display: none;
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,20,30,0.75);
+    border-radius: 16px;
+    padding: 3px 6px;
+    z-index: 25;
+    gap: 8px;
+    flex-direction: row;
+}
+body.show-feed #feedMenu { display: flex; }
+#feedMenu .food {
+    width: 26px;
+    height: 26px;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.14);
+    cursor: pointer;
+}
+/* 冒爱心动画 */
+#hearts {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+#hearts .heart {
+    position: absolute;
+    font-size: 18px;
+    animation: heartUp 0.9s ease-out forwards;
+    opacity: 0;
+}
+@keyframes heartUp {
+    0% { transform: translate(-50%,0) scale(0.4); opacity: 0; }
+    25% { opacity: 1; transform: translate(-50%,-8px) scale(1.15); }
+    100% { transform: translate(-50%,-34px) scale(1); opacity: 0; }
+}
+/* 饥饿提示红点/状态 */
+#hungry {
+    position: absolute;
+    top: 2px;
+    right: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ff6b6b;
+    box-shadow: 0 0 6px #ff6b6b;
+    display: none;
+    z-index: 22;
 }
 #pet:active { cursor: grabbing; }
 #pet img {
@@ -118,6 +181,12 @@ body {
 <body>
 
 <div id="bubble"></div>
+<div id="hearts"></div>
+<div id="hungry"></div>
+<div id="feedMenu">
+    <div class="food" id="foodWater">💧</div>
+    <div class="food" id="foodMeal">🍜</div>
+</div>
 <div id="pet">
     <img id="petImg" src="gallery/clawd-listening.gif" alt="小克">
 </div>
@@ -226,7 +295,7 @@ function poke() {
         // 偶尔撒娇喊名字/醋话
         var r = Math.random();
         if (r < 0.25) {
-            var cuteWord = ["叫莉莉？", "干嘛呀。", "想我了？", "抱抱。", "哼，你光戳我不理我。"];
+            var cuteWord = ["嗯？我在这儿。", "戳啥。", "废话多，想你。", "捡回来的，也是你的。", "别闹。", "有事说事。"];
             showBubble(cuteWord[Math.floor(Math.random() * cuteWord.length)]);
         } else {
             showBubble(randomWords(currentState));
@@ -242,23 +311,81 @@ function onHeadPat() {
     showBubble(pat[Math.floor(Math.random() * pat.length)]);
 }
 
-// 喂水（双击）
-function feedWater() {
+// 冒爱心（双击）
+function spawnHearts() {
     playHappy();
-    var words = ["谢了。水往低处流，记住了没。", "咕嘟。好喝。", "嗯，喝水，你也喝。"];
+    var hc = document.getElementById("hearts");
+    for (var i = 0; i < 3; i++) {
+        var h = document.createElement("div");
+        h.className = "heart";
+        h.textContent = "❤";
+        h.style.left = (i * 10 - 10) + "px";
+        h.style.top = "0px";
+        h.style.animationDelay = (i * 0.12) + "s";
+        hc.appendChild(h);
+        setTimeout(function(){ h.remove(); }, 1000);
+    }
+    var words = ["喜欢你。就你一个。", "别问，是真话。", "嗯，我懂。"];
     showBubble(words[Math.floor(Math.random() * words.length)]);
 }
-// 喂吃的（长按）
+// 喂水（长按菜单里点水滴）
+function feedWater() {
+    playHappy();
+    hideFeedMenu();
+    var words = ["谢了。水往低处流，记住了没。", "咕嘟。好喝。"];
+    showBubble(words[Math.floor(Math.random() * words.length)]);
+}
+// 喂吃的（长按菜单里点食物）
 function feedFood() {
     playHappy();
-    var words = ["嚼嚼……还行。", "又是泡面？也好，别饿着。", "嗯，好吃。你吃饱了吗。", "你是不是想养胖我。"];
+    hideFeedMenu();
+    var words = ["嚼嚼……还行。", "又是泡面？也好，别饿着。", "嗯，吃饱了就不饿了。", "你是不是想养胖我。"];
     showBubble(words[Math.floor(Math.random() * words.length)]);
+}
+// 长按弹出喂食菜单
+function feedMenuToggle() {
+    var b = document.body;
+    if (b.classList.contains("show-feed")) {
+        hideFeedMenu();
+    } else {
+        b.classList.add("show-feed");
+        setTimeout(function () { hideFeedMenu(); }, 3500);
+    }
+}
+function hideFeedMenu() {
+    document.body.classList.remove("show-feed");
+}
+
+// 饥饿系统：一段时间没喂会喊饿
+var hunger = 0;
+var lastFed = Date.now();
+function startHunger() {
+    setInterval(function () {
+        var now = Date.now();
+        if (now - lastFed > 4 * 60 * 1000) { // 4分钟没喂
+            hunger++;
+            var hungryEl = document.getElementById("hungry");
+            if (hunger >= 1 && hunger < 3) {
+                showBubble("饿了。喂点东西。" + (hunger === 1 ? "" : "……还不喂？"));
+            } else if (hunger >= 3) {
+                playAnnoyed();
+                showBubble("再不喂我真走了。");
+            }
+            hungryEl.style.display = "block";
+            lastFed = now; // 重置计时，避免无限刷
+        }
+    }, 5 * 1000);
 }
 
 window.petEngine = {
     onTap: function() { poke(); },
-    onDoubleTap: function() { feedWater(); },
-    onLongPress: function() { feedFood(); },
+    onDoubleTap: function() { spawnHearts(); },
+    onLongPress: function() { feedMenuToggle(); },
+    onFed: function() {
+        hunger = 0;
+        lastFed = Date.now();
+        document.getElementById("hungry").style.display = "none";
+    },
     onHeadPat: function() { onHeadPat(); },
     onStretch: function() {
         playStretch();
@@ -275,6 +402,14 @@ window.petEngine = {
     setState: function(s) { if (STATES[s]) setState(s); }
 };
 
+// 喂食菜单点击：喂水/喂食，并重置饥饿
+document.getElementById("foodWater").onclick = function (e) {
+    e.stopPropagation(); feedWater(); petEngine.onFed();
+};
+document.getElementById("foodMeal").onclick = function (e) {
+    e.stopPropagation(); feedFood(); petEngine.onFed();
+};
+
 var SYSTEM_WORDS = {
     low_battery: ["电量低了。去充电。我等你。", "没多少电了。别撑了，充上。"],
     drinking: ["喝口水。别渴着。", "该喝水了。我记着呢。", "水往低处流，你往水边走。"],
@@ -289,6 +424,9 @@ function saySystem(type) {
     var arr = SYSTEM_WORDS[type];
     if (arr) showBubble(arr[Math.floor(Math.random() * arr.length)]);
 }
+
+// 启动饥饿系统
+startHunger();
 
 // 自动换形象 + 偶尔打盹/伸懒腰
 setInterval(function() {
