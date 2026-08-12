@@ -383,46 +383,36 @@ class OverlayService : Service() {
         val p = params ?: return
         val baseX = p.x
         val baseY = p.y
-        val flyX = when (dir) {
-            "left" -> -400
-            "right" -> 400
-            else -> 0
-        }
-        val flyY = when (dir) {
-            "up" -> -300
-            "down" -> 300
-            else -> 0
-        }
+        val dm = resources.displayMetrics
+        val maxFlyX = (dm.widthPixels * 0.25f).toInt()
+        val maxFlyY = (dm.heightPixels * 0.25f).toInt()
+        val flyX = if (dir=="left") -maxFlyX else if (dir=="right") maxFlyX else 0
+        val flyY = if (dir=="up") -maxFlyY else if (dir=="down") maxFlyY else 0
         val steps = 12
         for (i in 1..steps) {
             val t = i.toFloat() / steps
-            val ease = (1 - (1 - t) * (1 - t)) // 加速飞出
+            val ease = (1 - (1 - t) * (1 - t))
             val nx = (baseX + flyX * ease).toInt()
             val ny = (baseY + flyY * ease).toInt()
-            mainHandler.postDelayed({ 
-                val cp = params ?: return@postDelayed
-                cp.x = nx
-                cp.y = ny
-                try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {}
-            }, i * 45L)
+            mainHandler.postDelayed({ val cp = params ?: return@postDelayed
+                cp.x = nx; cp.y = ny
+                try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {} }, i * 45L)
         }
-        // 短暂停顿后，从远处走回来（缓动回弹）
         mainHandler.postDelayed({
             for (i in steps downTo 1) {
                 val t = (steps - i + 1).toFloat() / steps
-                val easeBack = t * t // 减速爬回
+                val easeBack = t * t
                 val bx = (baseX + flyX * (1 - easeBack)).toInt()
                 val by = (baseY + flyY * (1 - easeBack)).toInt()
-                mainHandler.postDelayed({
-                    val cp = params ?: return@postDelayed
-                    cp.x = bx
-                    cp.y = by
-                    try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {}
-                }, i * 60L)
+                mainHandler.postDelayed({ val cp = params ?: return@postDelayed
+                    cp.x = bx; cp.y = by
+                    try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {} }, i * 55L)
             }
-        }, 700L)
+        }, 600L)
+        mainHandler.postDelayed({ val cp = params ?: return@postDelayed
+            cp.x = baseX; cp.y = baseY
+            try { wm.updateViewLayout(overlayView, cp) } catch (_: Exception) {} }, 2200L)
     }
-
     private fun startWhisperRotation() {
         val interval = 3600_000L
         mainHandler.postDelayed(object : Runnable {
