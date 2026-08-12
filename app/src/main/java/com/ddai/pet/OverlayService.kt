@@ -314,8 +314,18 @@ class OverlayService : Service() {
                 conn.disconnect()
 
                 val json = JSONObject(sb.toString())
-                val id = json.optLong("id", -1)
-                val msg = json.optString("msg", "").trim()
+                var id = json.optLong("id", -1)
+                var msg = json.optString("msg", "").trim()
+                // 兼容 api.github.com contents 接口（返回 base64 包装）
+                if (json.has("encoding") && json.optString("encoding") == "base64") {
+                    try {
+                        val b64 = json.optString("content", "").replace("\n", "")
+                        val raw = String(android.util.Base64.decode(b64, android.util.Base64.DEFAULT))
+                        val inner = JSONObject(raw)
+                        id = inner.optLong("id", id)
+                        msg = inner.optString("msg", "").trim()
+                    } catch (_: Exception) {}
+                }
                 if (id > seenMsgId && msg.isNotEmpty()) {
                     seenMsgId = id
                     val safeMsg = msg.replace("\\", "\\\\").replace("'", "\\'")
