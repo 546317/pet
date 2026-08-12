@@ -184,8 +184,8 @@ class OverlayService : Service() {
                     val p=params?:return@run
                     val wm=windowManager?:return@run
                     val dm=resources.displayMetrics
-                    val nx=dm.widthPixels*3/4
-                    val ny=dm.heightPixels*3/5
+                    val nx=dm.widthPixels/2 - dpToPx(60)
+                    val ny=dm.heightPixels/3
                     if(kotlin.math.abs(p.x-nx)>180||kotlin.math.abs(p.y-ny)>180){
                         p.x=nx; p.y=ny; wm.updateViewLayout(overlayView,p)
                     }
