@@ -424,27 +424,28 @@ class OverlayService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     val elapsed = System.currentTimeMillis() - touchStartTime
-                    // 甩动检测：快速移动且位移短（短促用力甩）
-                    // 摸头：在 pet 上垂直慢滑（向下位移大、水平位移小、速度不快）
-                    val hdx = event.rawX - touchStartRawX
-                    val hdy = event.rawY - touchStartRawY
-                    isHeadPat = (hdy > 60 && abs(hdx) < 40 && Math.abs(flickVelY) < 2500)
-                    if (isHeadPat) {
-                        callJs("onHeadPat")
-                    }
+                    // 甩飞定位第一：快速短促 = 甩（比摸头优先）
                     val vel = Math.sqrt((flickVelX * flickVelX + flickVelY * flickVelY).toDouble())
                     val travel = Math.sqrt(
                         ((event.rawX - initialTouchX) * (event.rawX - initialTouchX) +
                         (event.rawY - initialTouchY) * (event.rawY - initialTouchY)).toDouble()
                     )
-                    if (hasMoved && vel > 5000 && travel < 500) {
-                        // 甩出去，从远处爬回来
+                    val isFlick = hasMoved && vel > 2200 && travel < 400
+                    if (isFlick) {
                         val dir = if (Math.abs(flickVelX) >= Math.abs(flickVelY)) {
                             if (flickVelX >= 0) "right" else "left"
                         } else {
                             if (flickVelY >= 0) "down" else "up"
                         }
                         flickWindow(dir)
+                    } else if (hasMoved) {
+                        // 摸头：垂直向下慢滑（位移大、水平小、速度不快），非甩飞
+                        val hdx = event.rawX - touchStartRawX
+                        val hdy = event.rawY - touchStartRawY
+                        isHeadPat = (hdy > 60 && abs(hdx) < 40 && Math.abs(flickVelY) < 1800)
+                        if (isHeadPat) {
+                            callJs("onHeadPat")
+                        }
                     } else if (!hasMoved) {
                         when {
                             elapsed > LONG_PRESS_TIMEOUT -> {
